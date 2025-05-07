@@ -21,7 +21,7 @@ urlpatterns = [
     
     # Material URLs
     path('materials/', material_views.material_list, name='material_list'),
-    path('materials/add/', material_views.add_material, name='add_material'),  # Move this above the detail view
+    path('materials/add/', material_views.add_material, name='add_material'),
     path('materials/<str:material_id>/', material_views.material_detail, name='material_detail'),
     path('materials/<str:material_id>/withdraw/', material_views.withdraw_material, name='withdraw_material'),
     path('materials/<str:material_id>/return/', material_views.return_material, name='return_material'),

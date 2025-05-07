@@ -6,7 +6,9 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.db import transaction
+from django.db import transaction, connection
+from django.conf import settings
+import os
 
 from workshop_app.models import (
     Material, MaterialCategory, MaterialType, 
@@ -68,10 +70,29 @@ def material_list(request):
     categories = MaterialCategory.objects.all().order_by('name')
     material_types = MaterialType.objects.all().order_by('name')
     
+    # Get material images directly using raw SQL - filter for attachment_type_id = 3 (Product)
+    material_images = {}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT ma.material_id, ma.file 
+            FROM workshop_app_materialattachment ma 
+            WHERE ma.attachment_type_id = 3 
+            ORDER BY ma.upload_date DESC
+        """)
+        rows = cursor.fetchall()
+        
+        for material_id, file_path in rows:
+            if file_path:
+                # Create a full URL for the image using MEDIA_URL
+                media_url = settings.MEDIA_URL.rstrip('/')
+                full_url = f"{media_url}/{file_path}"
+                material_images[material_id] = full_url
+    
     context = {
         'materials': materials,
         'categories': categories,
         'material_types': material_types,
+        'material_images': material_images,
     }
     
     return render(request, 'materials/list.html', context)

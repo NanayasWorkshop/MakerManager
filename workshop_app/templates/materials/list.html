@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load material_tags %}
 
 {% block title %}Materials Inventory - Workshop Management{% endblock %}
 
@@ -92,8 +93,9 @@
         <table class="table table-hover material-table">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
+                    <th>Image</th>
                     <th>Name</th>
+                    <th>ID</th>
                     <th>Category</th>
                     <th>Type</th>
                     <th>Location</th>
@@ -104,36 +106,30 @@
             <tbody>
                 {% for material in materials %}
                 <tr{% if material.is_low_stock %} class="table-warning"{% endif %}{% if material.current_stock <= 0 %} class="table-danger"{% endif %}>
-                    <td><span class="badge bg-secondary">{{ material.material_id }}</span></td>
+                    <td width="80">
+                        {% if material.id in material_images %}
+                            <img src="{{ material_images|get_item:material.id }}" alt="{{ material.name }}" class="img-thumbnail material-thumbnail" width="70" height="70">
+                        {% else %}
+                            <div class="no-image-placeholder">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="fw-bold">{{ material.name }}</div>
                         <small class="text-muted">{{ material.color }} • {{ material.dimensions }}</small>
                     </td>
+                    <td><span class="badge bg-secondary">{{ material.material_id }}</span></td>
                     <td>{{ material.material_type.category.name }}</td>
                     <td>{{ material.material_type.name }}</td>
                     <td>{{ material.location_in_workshop }}</td>
                     <td>
-                        <div class="d-flex align-items-center">
-                            <div class="stock-level me-2">
-                                <div class="stock-indicator position-relative">
-                                    {% if material.minimum_stock_level %}
-                                    <div class="min-stock-marker" style="left: {% widthratio material.minimum_stock_level material.current_stock|add:material.minimum_stock_level 100 %}%"></div>
-                                    {% endif %}
-                                    <div class="stock-indicator-bar" 
-                                         style="width: {% if material.minimum_stock_level %}{% widthratio material.current_stock material.current_stock|add:material.minimum_stock_level 100 %}{% else %}100{% endif %}%; 
-                                                {% if material.is_low_stock %}background-color: #ffc107;
-                                                {% elif material.current_stock <= 0 %}background-color: #dc3545;
-                                                {% else %}background-color: #198754;{% endif %}">
-                                    </div>
-                                </div>
-                            </div>
-                            <span>
-                                {{ material.current_stock }} {{ material.unit_of_measurement }}
-                                {% if material.minimum_stock_level %}
-                                <small class="text-muted">(Min: {{ material.minimum_stock_level }})</small>
-                                {% endif %}
-                            </span>
-                        </div>
+                        <span>
+                            {{ material.current_stock }} {{ material.unit_of_measurement }}
+                            {% if material.minimum_stock_level %}
+                            <small class="text-muted">(Min: {{ material.minimum_stock_level }})</small>
+                            {% endif %}
+                        </span>
                     </td>
                     <td>
                         <div class="btn-group">
