@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from django.db import transaction, connection
 from django.conf import settings
 import os
+from decimal import Decimal
 
 from workshop_app.models import (
     Material, MaterialCategory, MaterialType, 
@@ -179,8 +180,8 @@ def withdraw_material(request, material_id):
     try:
         # Start transaction to ensure consistency
         with transaction.atomic():
-            # Update material stock
-            material.current_stock -= quantity
+            # Update material stock - Convert float to Decimal to prevent type errors
+            material.current_stock -= Decimal(str(quantity))
             
             # Check if we need to set minimum stock alert
             if material.minimum_stock_level and material.current_stock <= material.minimum_stock_level:
@@ -247,8 +248,8 @@ def return_material(request, material_id):
     try:
         # Start transaction to ensure consistency
         with transaction.atomic():
-            # Update material stock
-            material.current_stock += quantity
+            # Update material stock - Convert float to Decimal to prevent type errors
+            material.current_stock += Decimal(str(quantity))
             
             # Check if we need to clear minimum stock alert
             if material.minimum_stock_level and material.current_stock > material.minimum_stock_level:
