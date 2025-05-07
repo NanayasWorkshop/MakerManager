@@ -146,12 +146,9 @@
                     <button class="btn btn-success">
                         <i class="bi bi-play-circle"></i> Start Timer
                     </button>
-                    <button class="btn btn-info">
-                        <i class="bi bi-search"></i> Find Material
-                    </button>
-                    <button class="btn btn-warning">
-                        <i class="bi bi-tools"></i> Find Machine
-                    </button>
+                    <a href="{% url 'scan' %}" class="btn btn-secondary">
+                        <i class="bi bi-search"></i> Find Item
+                    </a>
                     <button class="btn btn-danger">
                         <i class="bi bi-exclamation-circle"></i> Report Issue
                     </button>
@@ -164,4 +161,5 @@
 
 {% block extra_js %}
 <!-- Add dashboard-specific JavaScript here -->
+{% csrf_token %}
 {% endblock %}

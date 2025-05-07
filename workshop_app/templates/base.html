@@ -105,6 +105,25 @@
     <!-- Custom JS -->
     <script src="{% static 'js/dashboard.js' %}"></script>
     
+    <!-- CSRF Token for AJAX requests -->
+    <script>
+        // Add CSRF token to all AJAX requests
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get CSRF token
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
+            
+            // Add event listener for AJAX requests
+            if (csrfToken) {
+                document.addEventListener('fetch', function(event) {
+                    const request = event.detail?.request;
+                    if (request && request.method !== 'GET') {
+                        request.headers.set('X-CSRFToken', csrfToken);
+                    }
+                });
+            }
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>

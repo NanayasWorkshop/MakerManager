@@ -381,6 +381,7 @@ def scanned_machine(request, machine_id):
     context = {
         'machine': machine,
         'is_certified': is_certified,
-        'active_job': active_job
+        'active_job': active_job,
+        'js_file': 'machine_detail.js'
     }
     return render(request, 'scanning/result.html', context)

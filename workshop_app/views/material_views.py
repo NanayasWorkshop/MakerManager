@@ -212,10 +212,25 @@ def withdraw_material(request, material_id):
                 notes=notes
             )
             
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Successfully withdrew {quantity} {material.unit_of_measurement} of {material.name}',
+                'job_reference': active_job.job_id,
+                'operator_name': request.user.get_full_name() or request.user.username
+            })
+            
         messages.success(request, f'Successfully withdrew {quantity} {material.unit_of_measurement} of {material.name}')
         return redirect('material_detail', material_id=material_id)
             
     except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+            
         messages.error(request, f'Error processing withdrawal: {str(e)}')
         return redirect('material_detail', material_id=material_id)
 
@@ -230,11 +245,21 @@ def return_material(request, material_id):
         quantity = float(request.POST.get('quantity', 0))
         notes = request.POST.get('notes', '')
     except ValueError:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid quantity provided'
+            })
         messages.error(request, 'Invalid quantity provided')
         return redirect('material_detail', material_id=material_id)
     
     # Validate quantity
     if quantity <= 0:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Quantity must be greater than zero'
+            })
         messages.error(request, 'Quantity must be greater than zero')
         return redirect('material_detail', material_id=material_id)
     
@@ -281,10 +306,25 @@ def return_material(request, material_id):
                     notes=notes
                 )
             
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Successfully returned {quantity} {material.unit_of_measurement} of {material.name}',
+                'job_reference': active_job.job_id if active_job else 'N/A',
+                'operator_name': request.user.get_full_name() or request.user.username
+            })
+            
         messages.success(request, f'Successfully returned {quantity} {material.unit_of_measurement} of {material.name}')
         return redirect('material_detail', material_id=material_id)
             
     except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+            
         messages.error(request, f'Error processing return: {str(e)}')
         return redirect('material_detail', material_id=material_id)
 
@@ -308,4 +348,143 @@ def get_active_job(request):
     except StaffSettings.DoesNotExist:
         return JsonResponse({
             'has_active_job': False
+        })
+
+@login_required
+@require_POST
+def clear_active_job(request):
+    """API endpoint to clear the user's active job and set personal job as active"""
+    try:
+        settings = StaffSettings.objects.get(user=request.user)
+        
+        # If personal job exists, set it as active
+        if settings.personal_job:
+            settings.active_job = settings.personal_job
+            settings.active_since = timezone.now()
+            settings.save()
+            return JsonResponse({
+                'success': True,
+                'message': 'Active job set to your personal job',
+                'job_name': settings.personal_job.project_name
+            })
+        # Otherwise, just clear the active job
+        else:
+            settings.clear_active_job()
+            return JsonResponse({
+                'success': True,
+                'message': 'Active job cleared successfully',
+                'no_personal_job': True
+            })
+    except StaffSettings.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'No staff settings found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@login_required
+def get_material_qr_code(request, material_id):
+    """Generate and return QR code for a material"""
+    material = get_object_or_404(Material, material_id=material_id)
+    
+    # Generate QR code
+    from workshop_app.utils.barcode_utils import generate_qr_code
+    qr_code_url = generate_qr_code(material.material_id)
+    
+    return JsonResponse({
+        'success': True,
+        'material_name': material.name,
+        'qr_code_url': qr_code_url
+    })
+
+@login_required
+def material_history(request, material_id):
+    """Display complete transaction history for a material"""
+    material = get_object_or_404(Material, material_id=material_id)
+    
+    # Get all transactions for this material
+    transactions = MaterialTransaction.objects.filter(
+        material=material
+    ).order_by('-transaction_date')
+    
+    # Get job uses for this material
+    job_uses = JobMaterial.objects.filter(
+        material=material
+    ).order_by('-date_used')
+    
+    context = {
+        'material': material,
+        'transactions': transactions,
+        'job_uses': job_uses
+    }
+    
+    return render(request, 'materials/history.html', context)
+
+@login_required
+def edit_material(request, material_id):
+    """Show form and handle editing a material"""
+    material = get_object_or_404(Material, material_id=material_id)
+    
+    # Get categories and types for dropdowns
+    categories = MaterialCategory.objects.all().order_by('name')
+    material_types = MaterialType.objects.all().order_by('name')
+    
+    if request.method == 'POST':
+        form = MaterialForm(request.POST, instance=material)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Material "{material.name}" has been updated')
+            return redirect('material_detail', material_id=material.material_id)
+    else:
+        form = MaterialForm(instance=material)
+    
+    context = {
+        'material': material,
+        'form': form,
+        'categories': categories,
+        'material_types': material_types,
+        'is_edit': True
+    }
+    
+    return render(request, 'materials/edit.html', context)
+
+@login_required
+@require_POST
+def start_timer(request):
+    """API endpoint to start time tracking for the active job"""
+    try:
+        settings = StaffSettings.objects.get(user=request.user)
+        active_job = settings.active_job
+        
+        if not active_job:
+            return JsonResponse({
+                'success': False,
+                'error': 'No active job found'
+            })
+        
+        # Here you would implement actual time tracking logic
+        # This is a placeholder implementation
+        
+        # Update the job
+        active_job.start_date = active_job.start_date or timezone.now().date()
+        active_job.save()
+        
+        return JsonResponse({
+            'success': True,
+            'job_name': active_job.project_name,
+            'message': f'Timer started for job: {active_job.project_name}'
+        })
+    except StaffSettings.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'No active job found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
         })

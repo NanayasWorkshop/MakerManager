@@ -259,4 +259,121 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('item_id').focus();
         });
     }
+    
+    // Handle withdraw/return forms in scan result page
+    const withdrawForm = document.getElementById('withdrawForm');
+    if (withdrawForm) {
+        const withdrawButton = withdrawForm.closest('.modal-content').querySelector('.modal-footer .btn-primary');
+        if (withdrawButton) {
+            withdrawButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                const materialId = document.querySelector('[data-material-id]').getAttribute('data-material-id');
+                const quantity = document.getElementById('withdrawQuantity').value;
+                const notes = document.getElementById('withdrawNotes').value;
+                
+                // Validate inputs
+                if (!quantity || parseFloat(quantity) <= 0) {
+                    alert('Please enter a valid quantity greater than zero');
+                    return;
+                }
+                
+                // Send AJAX request
+                fetch(`/materials/${materialId}/withdraw/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `quantity=${encodeURIComponent(quantity)}&notes=${encodeURIComponent(notes)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close the modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawModal'));
+                        modal.hide();
+                        
+                        // Show success message
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                        alertDiv.innerHTML = `
+                            <strong>Success!</strong> ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+                        
+                        // Auto dismiss alert after 5 seconds
+                        setTimeout(() => {
+                            alertDiv.remove();
+                        }, 5000);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error withdrawing material:', error);
+                    alert('An error occurred while withdrawing the material.');
+                });
+            });
+        }
+    }
+    
+    const returnForm = document.getElementById('returnForm');
+    if (returnForm) {
+        const returnButton = returnForm.closest('.modal-content').querySelector('.modal-footer .btn-primary');
+        if (returnButton) {
+            returnButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                const materialId = document.querySelector('[data-material-id]').getAttribute('data-material-id');
+                const quantity = document.getElementById('returnQuantity').value;
+                const notes = document.getElementById('returnNotes').value;
+                
+                // Validate inputs
+                if (!quantity || parseFloat(quantity) <= 0) {
+                    alert('Please enter a valid quantity greater than zero');
+                    return;
+                }
+                
+                // Send AJAX request
+                fetch(`/materials/${materialId}/return/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `quantity=${encodeURIComponent(quantity)}&notes=${encodeURIComponent(notes)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close the modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('returnModal'));
+                        modal.hide();
+                        
+                        // Show success message
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                        alertDiv.innerHTML = `
+                            <strong>Success!</strong> ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+                        
+                        // Auto dismiss alert after 5 seconds
+                        setTimeout(() => {
+                            alertDiv.remove();
+                        }, 5000);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error returning material:', error);
+                    alert('An error occurred while returning the material.');
+                });
+            });
+        }
+    }
 });

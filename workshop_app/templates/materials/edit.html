@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Material: {{ material.name }} - Workshop Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/material_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-3">
+        <a href="{% url 'material_detail' material.material_id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Material
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Edit Material: {{ material.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="editMaterialForm">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Basic Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Material Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" value="{{ material.name }}" required>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="category" name="category_id" required>
+                                        <option value="">Select Category</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if category.id == material.material_type.category.id %}selected{% endif %}>{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label for="type" class="form-label">Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="type" name="material_type_id" required>
+                                        <option value="">Select Type</option>
+                                        {% for type in material_types %}
+                                        <option value="{{ type.id }}" data-category="{{ type.category.id }}" {% if type.id == material.material_type.id %}selected{% endif %}>{{ type.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="color" class="form-label">Color</label>
+                                    <input type="text" class="form-control" id="color" name="color" value="{{ material.color }}">
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="dimensions" class="form-label">Dimensions</label>
+                                    <input type="text" class="form-control" id="dimensions" name="dimensions" value="{{ material.dimensions }}">
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="location" name="location_in_workshop" value="{{ material.location_in_workshop }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Stock Information</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="current_stock" class="form-label">Current Stock <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="current_stock" name="current_stock" min="0" step="0.01" value="{{ material.current_stock }}" required>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="unit_of_measurement" class="form-label">Unit <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="unit_of_measurement" name="unit_of_measurement" required>
+                                        <option value="">Select Unit</option>
+                                        <option value="pcs" {% if material.unit_of_measurement == 'pcs' %}selected{% endif %}>Pieces</option>
+                                        <option value="m" {% if material.unit_of_measurement == 'm' %}selected{% endif %}>Meters</option>
+                                        <option value="m²" {% if material.unit_of_measurement == 'm²' %}selected{% endif %}>Square Meters</option>
+                                        <option value="m³" {% if material.unit_of_measurement == 'm³' %}selected{% endif %}>Cubic Meters</option>
+                                        <option value="kg" {% if material.unit_of_measurement == 'kg' %}selected{% endif %}>Kilograms</option>
+                                        <option value="g" {% if material.unit_of_measurement == 'g' %}selected{% endif %}>Grams</option>
+                                        <option value="l" {% if material.unit_of_measurement == 'l' %}selected{% endif %}>Liters</option>
+                                        <option value="ml" {% if material.unit_of_measurement == 'ml' %}selected{% endif %}>Milliliters</option>
+                                        <option value="sheets" {% if material.unit_of_measurement == 'sheets' %}selected{% endif %}>Sheets</option>
+                                        <option value="rolls" {% if material.unit_of_measurement == 'rolls' %}selected{% endif %}>Rolls</option>
+                                        <option value="pairs" {% if material.unit_of_measurement == 'pairs' %}selected{% endif %}>Pairs</option>
+                                        <option value="sets" {% if material.unit_of_measurement == 'sets' %}selected{% endif %}>Sets</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="minimum_stock_level" class="form-label">Minimum Stock Level</label>
+                                    <input type="number" class="form-control" id="minimum_stock_level" name="minimum_stock_level" min="0" step="0.01" value="{{ material.minimum_stock_level|default:'' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="price_per_unit" class="form-label">Price Per Unit ($)</label>
+                                    <input type="number" class="form-control" id="price_per_unit" name="price_per_unit" min="0" step="0.01" value="{{ material.price_per_unit|default:'' }}">
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="purchase_date" class="form-label">Purchase Date</label>
+                                    <input type="date" class="form-control" id="purchase_date" name="purchase_date" value="{{ material.purchase_date|date:'Y-m-d' }}">
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="expiration_date" class="form-label">Expiration Date</label>
+                                    <input type="date" class="form-control" id="expiration_date" name="expiration_date" value="{{ material.expiration_date|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Supplier Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Supplier Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="supplier_name" class="form-label">Supplier Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="supplier_name" name="supplier_name" value="{{ material.supplier_name }}" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="brand_name" class="form-label">Brand Name</label>
+                                    <input type="text" class="form-control" id="brand_name" name="brand_name" value="{{ material.brand_name }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="supplier_sku" class="form-label">Supplier SKU</label>
+                                    <input type="text" class="form-control" id="supplier_sku" name="supplier_sku" value="{{ material.supplier_sku }}">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number</label>
+                                    <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ material.serial_number }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="project_association" class="form-label">Project Association</label>
+                                    <input type="text" class="form-control" id="project_association" name="project_association" value="{{ material.project_association }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Additional Information</h5>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="4">{{ material.notes }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='{% url 'material_detail' material.material_id %}'">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/material_form.js' %}"></script>
+{% endblock %}
