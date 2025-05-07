@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Workshop Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">My Profile</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="avatar-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3">
+                            <span class="initials">{{ user.first_name.0|default:"" }}{{ user.last_name.0|default:"" }}</span>
+                        </div>
+                        <h4>{{ user.get_full_name|default:user.username }}</h4>
+                        <p class="text-muted">{{ user.email }}</p>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        {% if operator %}
+                        <h5>Operator Details</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Operator ID:</dt>
+                            <dd class="col-sm-8">{{ operator.operator_id }}</dd>
+                            
+                            <dt class="col-sm-4">Specialization:</dt>
+                            <dd class="col-sm-8">{{ operator.specialization }}</dd>
+                            
+                            <dt class="col-sm-4">Skill Level:</dt>
+                            <dd class="col-sm-8">{{ operator.get_skill_level_display }}</dd>
+                            
+                            <dt class="col-sm-4">Special Skills:</dt>
+                            <dd class="col-sm-8">{{ operator.special_skills }}</dd>
+                        </dl>
+                        
+                        <h5 class="mt-4">Machine Certifications</h5>
+                        {% if certified_machines %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Machine ID</th>
+					<th>Name</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for machine in certified_machines %}
+                                    <tr>
+                                        <td>{{ machine.machine_id }}</td>
+                                        <td>{{ machine.name }}</td>
+                                        <td>{{ machine.machine_type.name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No machine certifications.</p>
+                        {% endif %}
+                        {% else %}
+                        <div class="alert alert-info">
+                            No operator profile found. Please contact an administrator to set up your operator details.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+/* Mobile-specific styles */
+@media (max-width: 767.98px) {
+    /* Larger touch targets for mobile */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+    
+    /* Adjust card padding for mobile */
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Make tables more mobile-friendly */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    /* Full-width buttons on mobile */
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group > .btn {
+        border-radius: 0.25rem !important;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Adjust spacing */
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Adjust avatar for mobile */
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5rem;
+    }
+}
