@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Manual Entry - Workshop Management{% endblock %}
+
+{% block content %}
+<div class="manual-entry-container">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Manual Entry</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Enter the item ID manually if scanning is not working.</p>
+            
+            <form method="post" action="{% url 'manual_entry' %}">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="entry_type" class="form-label">Item Type</label>
+                    <select class="form-select" id="entry_type" name="entry_type" required>
+                        <option value="job" {% if form.entry_type.value == 'job' %}selected{% endif %}>Job</option>
+                        <option value="material" {% if form.entry_type.value == 'material' %}selected{% endif %}>Material</option>
+                        <option value="machine" {% if form.entry_type.value == 'machine' %}selected{% endif %}>Machine</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="item_id" class="form-label">Item ID</label>
+                    <input type="text" class="form-control" id="item_id" name="item_id" required
+                           placeholder="Enter ID (e.g., J-12345, M-12345, MC-12345)" value="{{ form.item_id.value|default:'' }}">
+                    <div class="form-text">
+                        <span id="job_format" {% if form.entry_type.value != 'job' %}class="d-none"{% endif %}>
+                            Format: J-12345 or JOB-12345
+                        </span>
+                        <span id="material_format" {% if form.entry_type.value != 'material' %}class="d-none"{% endif %}>
+                            Format: M-12345 or MAT-12345
+                        </span>
+                        <span id="machine_format" {% if form.entry_type.value != 'machine' %}class="d-none"{% endif %}>
+                            Format: MC-12345 or MACH-12345
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <a href="{% url 'scan' %}" class="btn btn-outline-secondary">Back to Scanner</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const entryTypeSelect = document.getElementById('entry_type');
+        const jobFormat = document.getElementById('job_format');
+        const materialFormat = document.getElementById('material_format');
+        const machineFormat = document.getElementById('machine_format');
+        
+        entryTypeSelect.addEventListener('change', function() {
+            // Hide all format helpers
+            jobFormat.classList.add('d-none');
+            materialFormat.classList.add('d-none');
+            machineFormat.classList.add('d-none');
+            
+            // Show the relevant format helper
+            if (this.value === 'job') {
+                jobFormat.classList.remove('d-none');
+            } else if (this.value === 'material') {
+                materialFormat.classList.remove('d-none');
+            } else if (this.value === 'machine') {
+                machineFormat.classList.remove('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

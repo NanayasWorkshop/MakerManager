@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Scan History - Workshop Management{% endblock %}
+
+{% block content %}
+<div class="scan-history-container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h5 class="mb-0">Scan History</h5>
+            <a href="{% url 'scan' %}" class="btn btn-sm btn-light">Back to Scanner</a>
+        </div>
+        <div class="card-body p-0">
+            {% if scans %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Item</th>
+                            <th>ID</th>
+                            <th>Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in scans %}
+                        <tr>
+                            <td>
+                                {% if scan.scan_type == 'job' %}
+                                <span class="badge bg-primary">Job</span>
+                                {% elif scan.scan_type == 'material' %}
+                                <span class="badge bg-success">Material</span>
+                                {% elif scan.scan_type == 'machine' %}
+                                <span class="badge bg-warning text-dark">Machine</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ scan.scan_type|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ scan.item_name }}</td>
+                            <td>{{ scan.item_id }}</td>
+                            <td>{{ scan.timestamp|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <a href="{% url 'scanned_'|add:scan.scan_type scan.item_id %}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="mb-0">No scan history found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -276,3 +276,24 @@ class StaffSettings(models.Model):
         self.active_job = None
         self.active_since = None
         self.save()
+
+class ScanHistory(models.Model):
+    SCAN_TYPE_CHOICES = [
+        ('job', 'Job'),
+        ('material', 'Material'),
+        ('machine', 'Machine'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    scan_type = models.CharField(max_length=20, choices=SCAN_TYPE_CHOICES)
+    code = models.CharField(max_length=100)
+    item_id = models.CharField(max_length=100)
+    item_name = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.get_scan_type_display()}: {self.item_id} by {self.user.username}"
+    
+    class Meta:
+        verbose_name_plural = "Scan Histories"
+        ordering = ['-timestamp']

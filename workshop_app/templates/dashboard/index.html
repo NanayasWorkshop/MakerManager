@@ -45,7 +45,7 @@
     </div>
     <div class="card-body">
         <p>You don't have an active job. Scan a job QR code to start working.</p>
-        <button class="btn btn-primary">Scan Job</button>
+        <a href="{% url 'scan' %}" class="btn btn-primary">Scan Job</a>
     </div>
 </div>
 {% endif %}
@@ -140,9 +140,9 @@
             </div>
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary">
+                    <a href="{% url 'scan' %}" class="btn btn-primary">
                         <i class="bi bi-qr-code-scan"></i> Scan QR Code
-                    </button>
+                    </a>
                     <button class="btn btn-success">
                         <i class="bi bi-play-circle"></i> Start Timer
                     </button>

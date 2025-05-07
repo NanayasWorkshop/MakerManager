@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Scanner - Workshop Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/scanner.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="scanner-container">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Scanner</h5>
+        </div>
+        <div class="card-body">
+            <!-- Scanner Type Selection -->
+            <div class="scan-type-selector mb-3">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="scanType" id="scanTypeJob" value="job" {% if default_scan_type == 'job' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="scanTypeJob">Job</label>
+                    
+                    <input type="radio" class="btn-check" name="scanType" id="scanTypeMaterial" value="material" {% if default_scan_type == 'material' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="scanTypeMaterial">Material</label>
+                    
+                    <input type="radio" class="btn-check" name="scanType" id="scanTypeMachine" value="machine" {% if default_scan_type == 'machine' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="scanTypeMachine">Machine</label>
+                    
+                    <input type="radio" class="btn-check" name="scanType" id="scanTypeAuto" value="auto" {% if default_scan_type == 'auto' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="scanTypeAuto">Auto-Detect</label>
+                </div>
+            </div>
+            
+            <!-- Scanner Viewfinder -->
+            <div class="scanner-viewfinder mb-3">
+                <div id="scanner-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Initializing camera...</p>
+                </div>
+                
+                <video id="scanner-video" class="w-100 d-none"></video>
+                
+                <div id="scanner-overlay" class="d-none">
+                    <div class="scanner-guides"></div>
+                </div>
+                
+                <canvas id="scanner-canvas" class="d-none"></canvas>
+            </div>
+            
+            <!-- Scanner Controls -->
+            <div class="scanner-controls mb-3">
+                <div class="row">
+                    <div class="col-6">
+                        <button id="startScanButton" class="btn btn-primary w-100">
+                            <i class="bi bi-camera"></i> Start Scan
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button id="stopScanButton" class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-stop-circle"></i> Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manual Entry Option -->
+            <div class="manual-entry">
+                <p class="text-center">Trouble scanning? <a href="#" id="manualEntryLink">Enter code manually</a></p>
+                
+                <div id="manualEntryForm" class="d-none">
+                    <form method="post" action="{% url 'manual_entry' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="item_id" class="form-label">Enter {{ default_scan_type|title }} ID</label>
+                            <input type="text" class="form-control" id="item_id" name="item_id" required>
+                            <input type="hidden" id="entry_type" name="entry_type" value="{{ default_scan_type }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Scans -->
+    {% if recent_scans %}
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Recent Scans</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                {% for scan in recent_scans %}
+                <a href="{% url 'scanned_'|add:scan.scan_type scan.item_id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ scan.item_name }}</h6>
+                        <small class="text-muted">
+                            {% if scan.scan_type == 'job' %}
+                            <span class="badge bg-primary">Job</span>
+                            {% elif scan.scan_type == 'material' %}
+                            <span class="badge bg-success">Material</span>
+                            {% elif scan.scan_type == 'machine' %}
+                            <span class="badge bg-warning text-dark">Machine</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <small>{{ scan.item_id }} - {{ scan.timestamp|timesince }} ago</small>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-footer text-center">
+            <a href="{% url 'scan_history' %}" class="btn btn-sm btn-outline-secondary">View All Scans</a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Scan Result Modal -->
+    <div class="modal fade" id="scanResultModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scanResultTitle">Scan Result</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="scanResultBody">
+                    <!-- Scan result content will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="scanResultAction" class="btn btn-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="{% static 'js/scanner.js' %}"></script>
+{% endblock %}
