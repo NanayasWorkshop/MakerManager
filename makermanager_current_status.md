@@ -9,38 +9,51 @@ MakerManager/
 ├── media/                  # Media files directory
 ├── staticfiles/            # Static files for production
 ├── workshop_app/           # Main Django application
+│   ├── forms/              # Form definitions (NEW)
+│   │   ├── __init__.py     
+│   │   ├── base_forms.py   # Original forms
+│   │   └── material_forms.py # Material-specific forms (NEW)
 │   ├── middleware/         # For custom middleware
 │   ├── migrations/         # Database migrations
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_scanhistory.py
+│   │   └── 0003_jobmaterial_materialtransaction.py  # New models (NEW)
 │   ├── static/             # Static files
-│   │   ├── css/            # Stylesheets (base.css, mobile.css, scanner.css)
-│   │   └── js/             # JavaScript files (dashboard.js, scanner.js)
+│   │   ├── css/            
+│   │   │   ├── base.css
+│   │   │   ├── mobile.css
+│   │   │   ├── scanner.css
+│   │   │   ├── material_list.css  # Styles for material list (NEW)
+│   │   │   ├── material_detail.css  # Styles for material detail (NEW)
+│   │   │   └── material_form.css  # Styles for material forms (NEW)
+│   │   └── js/             
+│   │       ├── dashboard.js
+│   │       ├── scanner.js
+│   │       ├── material_list.js  # JS for material list (NEW)
+│   │       ├── material_detail.js  # JS for material detail (NEW)
+│   │       └── material_form.js  # JS for material forms (NEW)
 │   ├── templates/          # HTML templates
-│   │   ├── auth/           # Authentication templates (login.html, profile.html)
-│   │   ├── base.html       # Base template with common elements
-│   │   ├── dashboard/      # Dashboard templates (index.html)
+│   │   ├── auth/           # Authentication templates
+│   │   ├── base.html       # Base template (UPDATED with material navigation)
+│   │   ├── dashboard/      # Dashboard templates
 │   │   ├── jobs/           # Job management templates
 │   │   ├── machines/       # Machine templates
-│   │   ├── materials/      # Material templates
-│   │   ├── scanning/       # Scanning templates (new)
-│   │   │   ├── scan.html       # Main scanning interface
-│   │   │   ├── result.html     # Scan result display
-│   │   │   ├── history.html    # Scan history
-│   │   │   └── manual.html     # Manual entry form
+│   │   ├── materials/      # Material templates (NEW)
+│   │   │   ├── list.html       # Material listing page (NEW)
+│   │   │   ├── detail.html     # Material detail page (NEW)
+│   │   │   └── add.html        # Add new material form (NEW)
+│   │   ├── scanning/       # Scanning templates
 │   │   └── time/           # Time tracking templates
-│   ├── tests/              # Unit tests
-│   ├── utils/              # Utility functions
-│   │   ├── __init__.py
-│   │   └── barcode_utils.py   # Barcode/QR code utilities (new)
 │   ├── views/              # View modules
 │   │   ├── __init__.py
-│   │   ├── auth_views.py   # Authentication views (login, logout, profile)
+│   │   ├── auth_views.py   # Authentication views
 │   │   ├── dashboard_views.py  # Dashboard views
-│   │   └── scanning_views.py   # Scanning views (new)
+│   │   ├── scanning_views.py   # Scanning views
+│   │   └── material_views.py   # Material management views (NEW)
 │   ├── admin.py            # Admin site configuration
 │   ├── apps.py             # App configuration
-│   ├── forms.py            # Form definitions
-│   ├── models.py           # Data models (updated with ScanHistory)
-│   └── urls.py             # URL configuration (updated with scanning URLs)
+│   ├── models.py           # Data models (UPDATED with new models)
+│   └── urls.py             # URL configuration (UPDATED with material URLs)
 └── workshop_management/    # Django project configuration
     ├── __init__.py
     ├── asgi.py             # ASGI configuration
@@ -61,45 +74,99 @@ MakerManager/
 - ✅ Static files organization for CSS and JavaScript
 - ✅ Mobile-responsive design implemented
 - ✅ External access configured through ngrok
-- ✅ Scanning infrastructure implemented (new)
+- ✅ Scanning infrastructure implemented
   - ✅ QR code/barcode scanning functionality
   - ✅ Camera access through browser
   - ✅ Scanning history tracking
   - ✅ Support for jobs, materials, and machines
+- ✅ Material management system implemented (NEW)
+  - ✅ Material listing with search and filters
+  - ✅ Material detail view
+  - ✅ Transaction processing (withdraw/return)
+  - ✅ Add new material form
 
 ## Implemented Features
 
-- User authentication (login/logout)
-- User profile display
-- Dashboard showing active jobs, available machines, and low stock materials
-- Mobile-first responsive design
-- Navigation system with active job indicator
-- QR code scanning functionality (new)
-  - Camera-based scanning interface
-  - Manual entry fallback
-  - Scan history tracking
-  - Different handling for jobs, materials, and machines
-  - Result screens with appropriate actions
+### User Authentication
+- User login/logout functionality
+- User profile display with operator details
+- Machine certification information
+
+### Dashboard
+- Overview of active jobs, available machines, and low stock materials
+- Quick action buttons for common tasks
+
+### Scanning System
+- Camera-based QR code and barcode scanning
+- Support for different item types (jobs, materials, machines)
+- Manual entry fallback for damaged codes
+- Scan history tracking
+
+### Material Management (NEW)
+- **Material List View**:
+  - Comprehensive list of all materials in inventory
+  - Search functionality by name, ID, or supplier
+  - Filtering by category, type, and stock level
+  - Visual indicators for stock levels and minimum stock alerts
+  - Sort options for different material properties
+  - Quick action buttons for withdraw/return operations
+  
+- **Material Detail View**:
+  - Complete material details including specifications
+  - Stock level visualization
+  - Transaction history
+  - Supplier information
+  - Withdrawal and return functionality
+  
+- **Material Transaction Processing**:
+  - Support for withdrawing materials with quantity specification
+  - Support for returning unused materials
+  - Automatic stock level updates
+  - Low stock alerting when levels fall below minimum
+  - Transaction history recording
+  - Association with active jobs
+  
+- **Add New Material Form**:
+  - Form for adding new materials to inventory
+  - Support for all material properties
+  - Category and type selection
+  - Stock level management
+  - Supplier information tracking
+
+## Database Models
+
+### Core Material Models
+- `Material`: Stores material information and current stock levels
+- `MaterialType`: Categorizes materials by type
+- `MaterialCategory`: Groups material types
+
+### Transaction Models
+- `MaterialTransaction`: Records all material movements (withdrawals/returns)
+- `JobMaterial`: Associates materials with specific jobs
 
 ## Next Steps
 
-- ✅ ~~Implement scanning infrastructure for QR codes/barcodes~~ (completed)
-- Implement job activation and complete tracking functionality
-- Develop material withdrawal and return interfaces (partially implemented)
-- Complete machine usage tracking (partially implemented)
+- Implement job management functionality
+  - Job activation and tracking
+  - Job progress monitoring
+  - Job search and filtering
+- Develop machine usage tracking
+  - Machine reservation
+  - Usage time tracking
+  - Operator certification verification
 - Set up time tracking functionality
+  - Worker time tracking for jobs
+  - Break handling
+  - Time reporting
 - Enhance administrative features and reporting
+  - Material usage reports
+  - Job cost analysis
+  - Inventory management reports
 
-## Running the Application
+## Technical Notes
 
-- Local development server: `python manage.py runserver`
-- External access via ngrok: `ngrok http 8000`
-- Admin interface available at `/admin/`
-
-## Notes
-
-- The database already contains a pre-populated schema with test data
-- External access requires updating ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS in settings.py with the ngrok URL
-- The scanning implementation uses jsQR library for QR code detection
-- Make sure to install the required packages: `pip install qrcode Pillow`
-- The scanning implementation is primarily focused on mobile device usage
+- The project uses Django 5.2 with SQLite database
+- Material management has been integrated into the existing structure
+- Mobile-first design approach for all interfaces
+- Navigation includes a dropdown menu for material management
+- All material operations properly update related inventory and job data

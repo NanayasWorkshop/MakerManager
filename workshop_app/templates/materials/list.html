@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Materials Inventory - Workshop Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/material_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Materials Inventory</h1>
+        <div>
+            <a href="{% url 'add_material' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add New Material
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="filter-form">
+        <form method="get" id="materialFilterForm">
+            <div class="row align-items-end g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ request.GET.search|default:'' }}"
+                           placeholder="Search by name, ID, or supplier...">
+                </div>
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"i" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Type</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="">All Types</option>
+                        {% for type in material_types %}
+                        <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"i" %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="stock" class="form-label">Stock</label>
+                    <select class="form-select" id="stock" name="stock">
+                        <option value="">All Stock Levels</option>
+                        <option value="low" {% if request.GET.stock == 'low' %}selected{% endif %}>Low Stock</option>
+                        <option value="out" {% if request.GET.stock == 'out' %}selected{% endif %}>Out of Stock</option>
+                        <option value="available" {% if request.GET.stock == 'available' %}selected{% endif %}>In Stock</option>
+                    </select>
+                </div>
+                <div class="col-12 d-flex justify-content-between">
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-filter"></i> Apply Filters
+                        </button>
+                        <a href="{% url 'material_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                    </div>
+                    <div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown">
+                                <i class="bi bi-sort-down"></i> Sort by
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                                <li><a class="dropdown-item {% if request.GET.sort == 'name' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=name">Name</a></li>
+                                <li><a class="dropdown-item {% if request.GET.sort == 'id' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=id">ID</a></li>
+                                <li><a class="dropdown-item {% if request.GET.sort == 'stock' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=stock">Stock Level</a></li>
+                                <li><a class="dropdown-item {% if request.GET.sort == 'category' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=category">Category</a></li>
+                                <li><a class="dropdown-item {% if request.GET.sort == 'location' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=location">Location</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Materials Table -->
+    {% if materials %}
+    <div class="table-responsive">
+        <table class="table table-hover material-table">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials %}
+                <tr{% if material.is_low_stock %} class="table-warning"{% endif %}{% if material.current_stock <= 0 %} class="table-danger"{% endif %}>
+                    <td><span class="badge bg-secondary">{{ material.material_id }}</span></td>
+                    <td>
+                        <div class="fw-bold">{{ material.name }}</div>
+                        <small class="text-muted">{{ material.color }} • {{ material.dimensions }}</small>
+                    </td>
+                    <td>{{ material.material_type.category.name }}</td>
+                    <td>{{ material.material_type.name }}</td>
+                    <td>{{ material.location_in_workshop }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="stock-level me-2">
+                                <div class="stock-indicator position-relative">
+                                    {% if material.minimum_stock_level %}
+                                    <div class="min-stock-marker" style="left: {% widthratio material.minimum_stock_level material.current_stock|add:material.minimum_stock_level 100 %}%"></div>
+                                    {% endif %}
+                                    <div class="stock-indicator-bar" 
+                                         style="width: {% if material.minimum_stock_level %}{% widthratio material.current_stock material.current_stock|add:material.minimum_stock_level 100 %}{% else %}100{% endif %}%; 
+                                                {% if material.is_low_stock %}background-color: #ffc107;
+                                                {% elif material.current_stock <= 0 %}background-color: #dc3545;
+                                                {% else %}background-color: #198754;{% endif %}">
+                                    </div>
+                                </div>
+                            </div>
+                            <span>
+                                {{ material.current_stock }} {{ material.unit_of_measurement }}
+                                {% if material.minimum_stock_level %}
+                                <small class="text-muted">(Min: {{ material.minimum_stock_level }})</small>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'material_detail' material.material_id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#withdrawModal" 
+                                    data-material-id="{{ material.material_id }}" data-material-name="{{ material.name }}" data-material-unit="{{ material.unit_of_measurement }}">
+                                <i class="bi bi-dash-circle"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#returnModal"
+                                    data-material-id="{{ material.material_id }}" data-material-name="{{ material.name }}" data-material-unit="{{ material.unit_of_measurement }}">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Last</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <p class="mb-0">No materials found matching your criteria. Try adjusting your filters or <a href="{% url 'add_material' %}">add a new material</a>.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Withdraw Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Withdraw Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="withdrawForm" method="post" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="material_id" id="withdrawMaterialId">
+                    <input type="hidden" name="action" value="withdraw">
+                    
+                    <div class="mb-3">
+                        <label for="withdrawQuantity" class="form-label">Quantity to Withdraw</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="withdrawQuantity" name="quantity" min="0.01" step="0.01" required>
+                            <span class="input-group-text" id="withdrawUnitLabel"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="withdrawNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="withdrawNotes" name="notes" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info" id="jobAssociationInfo">
+                        <!-- Will be filled by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Withdraw</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Return Modal -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Return Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="returnForm" method="post" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="material_id" id="returnMaterialId">
+                    <input type="hidden" name="action" value="return">
+                    
+                    <div class="mb-3">
+                        <label for="returnQuantity" class="form-label">Quantity to Return</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="returnQuantity" name="quantity" min="0.01" step="0.01" required>
+                            <span class="input-group-text" id="returnUnitLabel"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="returnNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="returnNotes" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/material_list.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,50 @@
+/* Material detail specific styles */
+.min-stock-indicator {
+    position: relative;
+    margin-top: -20px;
+}
+
+.min-stock-indicator .line {
+    position: absolute;
+    top: 0;
+    left: 50%; /* Adjust based on minimum stock */
+    height: 15px;
+    width: 2px;
+    background-color: #dc3545;
+}
+
+.min-stock-indicator .label {
+    position: absolute;
+    top: 15px;
+    left: 50%; /* Should match the line's left position */
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: #dc3545;
+    white-space: nowrap;
+}
+
+.stock-chart {
+    position: relative;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.notes-section {
+    margin-top: 20px;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+@media (max-width: 767.98px) {
+    .card-footer .btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

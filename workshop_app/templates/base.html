@@ -39,6 +39,15 @@
                                 <i class="bi bi-qr-code-scan"></i> Scan
                             </a>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="materialsDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-box"></i> Materials
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'material_list' %}">List Materials</a>
+                                <a class="dropdown-item" href="{% url 'add_material' %}">Add New Material</a>
+                            </div>
+                        </li>
                         <!-- Additional navigation items can be added here -->
                     </ul>
                     

@@ -297,3 +297,51 @@ class ScanHistory(models.Model):
     class Meta:
         verbose_name_plural = "Scan Histories"
         ordering = ['-timestamp']
+
+class MaterialTransaction(models.Model):
+    TRANSACTION_TYPE_CHOICES = [
+        ('withdrawal', 'Withdrawal'),
+        ('return', 'Return'),
+        ('adjustment', 'Adjustment'),
+        ('purchase', 'Purchase'),
+    ]
+    
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='transactions')
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    transaction_date = models.DateTimeField(auto_now_add=True)
+    job_reference = models.CharField(max_length=100)
+    operator_name = models.CharField(max_length=100)
+    notes = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.get_transaction_type_display()} of {self.quantity} - {self.material.name}"
+    
+    class Meta:
+        ordering = ['-transaction_date']
+
+class JobMaterial(models.Model):
+    RESULT_CHOICES = [
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('returned', 'Returned'),
+        ('scrapped', 'Scrapped'),
+    ]
+    
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='materials')
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='job_uses')
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    date_used = models.DateTimeField(auto_now_add=True)
+    added_by = models.CharField(max_length=100)
+    result = models.CharField(max_length=20, choices=RESULT_CHOICES)
+    notes = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.quantity} of {self.material.name} for {self.job.project_name}"
+    
+    @property
+    def total_cost(self):
+        if self.unit_price:
+            return self.quantity * self.unit_price
+        return None
