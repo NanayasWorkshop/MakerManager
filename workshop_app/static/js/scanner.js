@@ -12,13 +12,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const stopButton = document.getElementById('stopScanButton');
     const manualEntryLink = document.getElementById('manualEntryLink');
     const manualEntryForm = document.getElementById('manualEntryForm');
-    const scanTypeRadios = document.querySelectorAll('input[name="scanType"]');
     
     // Scanner variables
     let scanning = false;
     let videoStream = null;
     let scanInterval = null;
-    let scanType = document.querySelector('input[name="scanType"]:checked').value;
     
     // Get CSRF token for AJAX requests
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -35,21 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
     manualEntryLink.addEventListener('click', function(e) {
         e.preventDefault();
         manualEntryForm.classList.toggle('d-none');
-    });
-    
-    // Scan type selection
-    scanTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            scanType = this.value;
-            
-            // Update entry type in manual entry form if visible
-            if (!manualEntryForm.classList.contains('d-none')) {
-                const entryTypeInput = manualEntryForm.querySelector('#entry_type');
-                if (scanType !== 'auto') {
-                    entryTypeInput.value = scanType;
-                }
-            }
-        });
+        if (!manualEntryForm.classList.contains('d-none')) {
+            document.getElementById('item_id').focus();
+        }
     });
     
     // ---- Functions ----
@@ -156,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (code) {
-            console.log("QR Code detected:", code.data);
+            console.log("Code detected:", code.data);
             
             // Stop scanning
             stopScanning();
@@ -176,14 +162,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <p class="mt-2">Processing code...</p>
         `;
         
-        // Send to server for processing
+        // Send to server for processing - always use auto detection
         fetch('/scan/process/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': csrfToken
             },
-            body: `code=${encodeURIComponent(code)}&scan_type=${encodeURIComponent(scanType)}`
+            body: `code=${encodeURIComponent(code)}&scan_type=auto`
         })
         .then(response => response.json())
         .then(data => {

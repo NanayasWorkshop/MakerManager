@@ -84,7 +84,7 @@ def validate_machine_id(machine_id):
 
 def determine_code_type(code):
     """
-    Determine the type of code scanned
+    Determine the type of code scanned based on its format
     
     Args:
         code (str): Scanned code
@@ -92,16 +92,34 @@ def determine_code_type(code):
     Returns:
         str: 'job', 'material', 'machine', or 'unknown'
     """
+    if not code:
+        return 'unknown'
+        
+    # Clean the code (remove spaces, ensure uppercase for pattern matching)
+    code = code.strip().upper()
+    
+    # Try to match our internal code format first
     if validate_job_id(code):
         return 'job'
     elif validate_material_id(code):
         return 'material'
     elif validate_machine_id(code):
         return 'machine'
-    else:
-        # Try to recognize other formats like EAN, supplier codes, etc.
-        # This would require more sophisticated logic for production
-        return 'unknown'
+    
+    # Check if it contains any identifiable prefixes
+    if code.startswith('J-') or code.startswith('JOB-'):
+        return 'job'
+    elif code.startswith('M-') or code.startswith('MAT-'):
+        return 'material'
+    elif code.startswith('MC-') or code.startswith('MACH-'):
+        return 'machine'
+    
+    # If we can't determine the type based on our internal format,
+    # we'll assume it's either a material or machine serial number/barcode
+    # The actual lookup will happen in the view
+    
+    # For now, we'll return 'unknown' and the view will attempt to find it in the database
+    return 'unknown'
 
 def parse_code(code):
     """
@@ -113,13 +131,12 @@ def parse_code(code):
     Returns:
         str: Extracted ID from the code
     """
-    # For QR codes that might contain URLs or additional data
-    # Example: https://workshop.example.com/material/M-12345
-    # Should extract M-12345
-    
     if not code:
         return None
-        
+    
+    # Clean the code
+    code = code.strip()
+    
     # URL pattern
     url_pattern = r'(?:.*/)?((?:J|JOB|M|MAT|MC|MACH)-\d{1,6})(?:/.*)?$'
     url_match = re.search(url_pattern, code, re.IGNORECASE)
@@ -127,12 +144,13 @@ def parse_code(code):
     if url_match:
         return url_match.group(1)
     
-    # Direct ID pattern
+    # Direct ID pattern for our internal codes
     id_pattern = r'((?:J|JOB|M|MAT|MC|MACH)-\d{1,6})'
     id_match = re.search(id_pattern, code, re.IGNORECASE)
     
     if id_match:
         return id_match.group(1)
     
-    # Just return the original code if we can't parse it
+    # If it doesn't match our internal format, return the whole code
+    # as it could be a manufacturer's serial number or barcode
     return code
