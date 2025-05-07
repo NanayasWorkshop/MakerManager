@@ -9,6 +9,7 @@ urlpatterns = [
     
     # Dashboard URL
     path('', dashboard_views.dashboard, name='dashboard'),
+    path('activate-job/', dashboard_views.activate_job_by_id, name='activate_job_by_id'),
     
     # Scanning URLs
     path('scan/', scanning_views.scan_view, name='scan'),
@@ -38,3 +39,4 @@ urlpatterns = [
     path('api/clear-active-job/', material_views.clear_active_job, name='clear_active_job'),
     path('api/start-timer/', material_views.start_timer, name='start_timer'),
 ]
+

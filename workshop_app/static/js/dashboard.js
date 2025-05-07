@@ -43,6 +43,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Handle activate personal job button
+    const activatePersonalJobBtn = document.getElementById('activatePersonalJobBtn');
+    if (activatePersonalJobBtn) {
+        activatePersonalJobBtn.addEventListener('click', function(event) {
+            // Send AJAX request to clear active job (which sets personal job as active)
+            fetch('/api/clear-active-job/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Personal job set as active: ' + data.job_name);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error activating personal job:', error);
+                alert('An error occurred while activating personal job.');
+            });
+        });
+    }
+    
     // Start Timer button handler
     const startTimerButton = document.querySelector('.quick-actions .btn-success');
     if (startTimerButton) {
