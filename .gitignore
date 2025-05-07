@@ -3,6 +3,7 @@ MakerVenv/
 
 #Picutres
 data/
+media/
 
 # Python cache files
 __pycache__/
