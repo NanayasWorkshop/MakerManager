@@ -284,8 +284,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle View Full History link
-    const viewHistoryLink = document.querySelector('.card-footer .btn-outline-secondary');
+    // Handle View Full History link - UPDATED SELECTOR TO BE MORE SPECIFIC
+    const viewHistoryLink = document.querySelector('.card-footer a.btn-sm.btn-outline-secondary');
     if (viewHistoryLink) {
         viewHistoryLink.addEventListener('click', function(event) {
             event.preventDefault();
