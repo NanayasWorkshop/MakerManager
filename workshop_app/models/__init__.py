@@ -1,5 +1,4 @@
-# This file re-exports all models from the models package
-# to maintain backwards compatibility
+# Import all models to maintain the same API
 from workshop_app.models.material_models import (
     MaterialCategory, MaterialType, Material, 
     AttachmentType, MaterialAttachment
@@ -20,6 +19,7 @@ from workshop_app.models.transaction_models import (
     MaterialTransaction, ScanHistory
 )
 
+# Define what's exported when using `from workshop_app.models import *`
 __all__ = [
     'MaterialCategory', 'MaterialType', 'Material', 
     'AttachmentType', 'MaterialAttachment',
