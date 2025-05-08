@@ -1,7 +1,24 @@
-// Material Form JavaScript
+/**
+ * Material Form Page JavaScript
+ * Uses the utility modules for common functionality
+ */
 
 document.addEventListener('DOMContentLoaded', function() {
     // Filter material types based on selected category
+    setupCategoryTypeFilter();
+    
+    // Form validation
+    setupFormValidation();
+    
+    // Toggle custom type field based on attachment type selection
+    setupAttachmentTypeToggle();
+    
+    // Handle attachment upload without page reload
+    setupAttachmentUpload();
+});
+
+// Setup filtering of material types based on category
+function setupCategoryTypeFilter() {
     const categorySelect = document.getElementById('category');
     const typeSelect = document.getElementById('type');
     
@@ -31,23 +48,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update options when category changes
         categorySelect.addEventListener('change', updateTypeOptions);
     }
+}
+
+// Setup form validation
+function setupFormValidation() {
+    const materialForm = document.getElementById('addMaterialForm') || 
+                         document.getElementById('editMaterialForm');
     
-    // Form validation
-    const addMaterialForm = document.getElementById('addMaterialForm');
-    if (addMaterialForm) {
-        addMaterialForm.addEventListener('submit', function(event) {
+    if (materialForm) {
+        materialForm.addEventListener('submit', function(event) {
             let isValid = true;
             
             // Validate required fields
-            const requiredFields = addMaterialForm.querySelectorAll('[required]');
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.classList.add('is-invalid');
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
+            isValid = WMSForms.validateRequiredFields(materialForm);
             
             // Validate stock number inputs
             const numberInputs = [
@@ -81,8 +94,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Toggle custom type field based on attachment type selection
+}
+
+// Setup toggle for custom attachment type field
+function setupAttachmentTypeToggle() {
     const attachmentTypeSelect = document.getElementById('attachment_type');
     const customTypeField = document.querySelector('.custom-type-field');
 
@@ -97,8 +112,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+}
 
-    // Handle attachment upload without page reload
+// Setup attachment upload handling
+function setupAttachmentUpload() {
     const addAttachmentBtn = document.getElementById('addAttachmentBtn');
     if (addAttachmentBtn) {
         addAttachmentBtn.addEventListener('click', function() {
@@ -127,4 +144,4 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editMaterialForm').submit();
         });
     }
-});
+}

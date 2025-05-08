@@ -1,7 +1,22 @@
-// Material List JavaScript
+/**
+ * Material List Page JavaScript
+ * Uses the utility modules for common functionality
+ */
 
 document.addEventListener('DOMContentLoaded', function() {
     // Handle category selection to dynamically update types
+    setupCategoryFilter();
+    
+    // Initialize modal data for withdraw and return
+    setupWithdrawModal();
+    setupReturnModal();
+    
+    // Form validation for withdraw and return
+    setupFormValidation();
+});
+
+// Setup the category filter to update types
+function setupCategoryFilter() {
     const categorySelect = document.getElementById('category');
     const typeSelect = document.getElementById('type');
     
@@ -12,58 +27,53 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('materialFilterForm').submit();
         });
     }
-    
-    // Initialize modal data for withdraw and return
+}
+
+// Setup the withdraw modal
+function setupWithdrawModal() {
     const withdrawModal = document.getElementById('withdrawModal');
-    if (withdrawModal) {
-        withdrawModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const materialId = button.getAttribute('data-material-id');
-            const materialName = button.getAttribute('data-material-name');
-            const materialUnit = button.getAttribute('data-material-unit');
-            
-            // Set modal title and form values
-            withdrawModal.querySelector('.modal-title').textContent = `Withdraw ${materialName}`;
-            document.getElementById('withdrawMaterialId').value = materialId;
-            document.getElementById('withdrawUnitLabel').textContent = materialUnit;
-            document.getElementById('withdrawForm').action = `/materials/${materialId}/withdraw/`;
-            
-            // Check if there's an active job and show in the info box
-            fetch('/api/active-job/')
-                .then(response => response.json())
-                .then(data => {
-                    const infoBox = document.getElementById('jobAssociationInfo');
-                    if (data.has_active_job) {
-                        infoBox.innerHTML = `Material will be associated with your active job: <strong>${data.job_name}</strong>`;
-                        infoBox.style.display = 'block';
-                    } else {
-                        infoBox.innerHTML = 'You have no active job. Please activate a job before withdrawing material.';
-                        infoBox.style.display = 'block';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking active job:', error);
-                });
-        });
-    }
+    if (!withdrawModal) return;
     
+    // Use modals utility to set up the modal
+    WMSModals.setupModal('withdrawModal', '[data-bs-target="#withdrawModal"]', {
+        'material-id': 'withdrawMaterialId',
+        'material-name': 'withdrawModalTitle',
+        'material-unit': 'withdrawUnitLabel'
+    });
+    
+    withdrawModal.addEventListener('show.bs.modal', function(event) {
+        // Handle setting form action
+        const button = event.relatedTarget;
+        const materialId = button.getAttribute('data-material-id');
+        document.getElementById('withdrawForm').action = `/materials/${materialId}/withdraw/`;
+        
+        // Check if there's an active job and show in the info box
+        checkActiveJob();
+    });
+}
+
+// Setup the return modal
+function setupReturnModal() {
     const returnModal = document.getElementById('returnModal');
-    if (returnModal) {
-        returnModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const materialId = button.getAttribute('data-material-id');
-            const materialName = button.getAttribute('data-material-name');
-            const materialUnit = button.getAttribute('data-material-unit');
-            
-            // Set modal title and form values
-            returnModal.querySelector('.modal-title').textContent = `Return ${materialName}`;
-            document.getElementById('returnMaterialId').value = materialId;
-            document.getElementById('returnUnitLabel').textContent = materialUnit;
-            document.getElementById('returnForm').action = `/materials/${materialId}/return/`;
-        });
-    }
+    if (!returnModal) return;
     
-    // Form validation for withdraw and return
+    // Use modals utility to set up the modal
+    WMSModals.setupModal('returnModal', '[data-bs-target="#returnModal"]', {
+        'material-id': 'returnMaterialId',
+        'material-name': 'returnModalTitle',
+        'material-unit': 'returnUnitLabel'
+    });
+    
+    returnModal.addEventListener('show.bs.modal', function(event) {
+        // Handle setting form action
+        const button = event.relatedTarget;
+        const materialId = button.getAttribute('data-material-id');
+        document.getElementById('returnForm').action = `/materials/${materialId}/return/`;
+    });
+}
+
+// Setup form validation for withdraw and return forms
+function setupFormValidation() {
     const withdrawForm = document.getElementById('withdrawForm');
     if (withdrawForm) {
         withdrawForm.addEventListener('submit', function(event) {
@@ -85,4 +95,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+}
+
+// Check for active job and update the info box
+function checkActiveJob() {
+    WMSAPI.getData('/api/active-job/')
+        .then(data => {
+            const infoBox = document.getElementById('jobAssociationInfo');
+            if (data.has_active_job) {
+                infoBox.innerHTML = `Material will be associated with your active job: <strong>${data.job_name}</strong>`;
+                infoBox.style.display = 'block';
+            } else {
+                infoBox.innerHTML = 'You have no active job. Please activate a job before withdrawing material.';
+                infoBox.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking active job:', error);
+        });
+}
