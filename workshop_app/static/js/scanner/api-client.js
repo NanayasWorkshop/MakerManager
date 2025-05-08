@@ -1,26 +1,19 @@
 /**
- * API Client Module
- * Handles all API interactions with the server
+ * API Client Module for Scanner
+ * Uses the global utility modules for API interactions
  */
 
 /**
  * Process a scanned code by sending it to the server
  * @param {string} code - The scanned code
- * @param {string} csrfToken - CSRF token for the request
  * @returns {Promise<Object>} - Server response
  */
-async function processScannedCode(code, csrfToken) {
+async function processScannedCode(code) {
     try {
-        const response = await fetch('/scan/process/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrfToken
-            },
-            body: `code=${encodeURIComponent(code)}&scan_type=auto`
+        return await WMSAPI.apiRequest('/scan/process/', 'POST', {
+            code: code,
+            scan_type: 'auto'
         });
-        
-        return await response.json();
     } catch (error) {
         console.error('Error processing scan:', error);
         throw new Error('An error occurred while processing the scan.');
@@ -32,21 +25,14 @@ async function processScannedCode(code, csrfToken) {
  * @param {string} materialId - Material ID
  * @param {number} quantity - Quantity to withdraw
  * @param {string} notes - Optional notes
- * @param {string} csrfToken - CSRF token for the request
  * @returns {Promise<Object>} - Server response
  */
-async function withdrawMaterial(materialId, quantity, notes, csrfToken) {
+async function withdrawMaterial(materialId, quantity, notes) {
     try {
-        const response = await fetch(`/materials/${materialId}/withdraw/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrfToken
-            },
-            body: `quantity=${encodeURIComponent(quantity)}&notes=${encodeURIComponent(notes)}`
+        return await WMSAPI.apiRequest(`/materials/${materialId}/withdraw/`, 'POST', {
+            quantity: quantity,
+            notes: notes
         });
-        
-        return await response.json();
     } catch (error) {
         console.error('Error withdrawing material:', error);
         throw new Error('An error occurred while withdrawing the material.');
@@ -58,28 +44,22 @@ async function withdrawMaterial(materialId, quantity, notes, csrfToken) {
  * @param {string} materialId - Material ID
  * @param {number} quantity - Quantity to return
  * @param {string} notes - Optional notes
- * @param {string} csrfToken - CSRF token for the request
  * @returns {Promise<Object>} - Server response
  */
-async function returnMaterial(materialId, quantity, notes, csrfToken) {
+async function returnMaterial(materialId, quantity, notes) {
     try {
-        const response = await fetch(`/materials/${materialId}/return/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrfToken
-            },
-            body: `quantity=${encodeURIComponent(quantity)}&notes=${encodeURIComponent(notes)}`
+        return await WMSAPI.apiRequest(`/materials/${materialId}/return/`, 'POST', {
+            quantity: quantity,
+            notes: notes
         });
-        
-        return await response.json();
     } catch (error) {
         console.error('Error returning material:', error);
         throw new Error('An error occurred while returning the material.');
     }
 }
 
-export {
+// Export scanner API functions
+window.ScannerAPI = {
     processScannedCode,
     withdrawMaterial,
     returnMaterial

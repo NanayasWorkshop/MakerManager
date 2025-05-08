@@ -34,17 +34,16 @@ function setupWithdrawModal() {
     const withdrawModal = document.getElementById('withdrawModal');
     if (!withdrawModal) return;
     
-    // Use modals utility to set up the modal
-    WMSModals.setupModal('withdrawModal', '[data-bs-target="#withdrawModal"]', {
-        'material-id': 'withdrawMaterialId',
-        'material-name': 'withdrawModalTitle',
-        'material-unit': 'withdrawUnitLabel'
-    });
-    
     withdrawModal.addEventListener('show.bs.modal', function(event) {
-        // Handle setting form action
         const button = event.relatedTarget;
         const materialId = button.getAttribute('data-material-id');
+        const materialName = button.getAttribute('data-material-name');
+        const materialUnit = button.getAttribute('data-material-unit');
+        
+        // Set modal title and form values
+        withdrawModal.querySelector('.modal-title').textContent = `Withdraw ${materialName}`;
+        document.getElementById('withdrawMaterialId').value = materialId;
+        document.getElementById('withdrawUnitLabel').textContent = materialUnit;
         document.getElementById('withdrawForm').action = `/materials/${materialId}/withdraw/`;
         
         // Check if there's an active job and show in the info box
@@ -57,17 +56,16 @@ function setupReturnModal() {
     const returnModal = document.getElementById('returnModal');
     if (!returnModal) return;
     
-    // Use modals utility to set up the modal
-    WMSModals.setupModal('returnModal', '[data-bs-target="#returnModal"]', {
-        'material-id': 'returnMaterialId',
-        'material-name': 'returnModalTitle',
-        'material-unit': 'returnUnitLabel'
-    });
-    
     returnModal.addEventListener('show.bs.modal', function(event) {
-        // Handle setting form action
         const button = event.relatedTarget;
         const materialId = button.getAttribute('data-material-id');
+        const materialName = button.getAttribute('data-material-name');
+        const materialUnit = button.getAttribute('data-material-unit');
+        
+        // Set modal title and form values
+        returnModal.querySelector('.modal-title').textContent = `Return ${materialName}`;
+        document.getElementById('returnMaterialId').value = materialId;
+        document.getElementById('returnUnitLabel').textContent = materialUnit;
         document.getElementById('returnForm').action = `/materials/${materialId}/return/`;
     });
 }

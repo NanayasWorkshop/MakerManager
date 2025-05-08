@@ -31,20 +31,22 @@ async function initializeCamera(videoElement, loadingElement, overlayElement) {
         videoElement.onloadedmetadata = function() {
             loadingElement.classList.add('d-none');
             videoElement.classList.remove('d-none');
-            overlayElement.classList.remove('d-none');
+            if (overlayElement) overlayElement.classList.remove('d-none');
             videoElement.play();
         };
         
         return true;
     } catch (error) {
         console.error('Camera access error:', error);
-        loadingElement.innerHTML = `
-            <div class="alert alert-danger">
-                <p><strong>Camera access failed</strong></p>
-                <p>${error.message}</p>
-                <p>Please ensure you've granted camera permission and are using a supported browser.</p>
-            </div>
-        `;
+        if (loadingElement) {
+            loadingElement.innerHTML = `
+                <div class="alert alert-danger">
+                    <p><strong>Camera access failed</strong></p>
+                    <p>${error.message}</p>
+                    <p>Please ensure you've granted camera permission and are using a supported browser.</p>
+                </div>
+            `;
+        }
         return false;
     }
 }
@@ -65,6 +67,7 @@ function stopCamera() {
  * @returns {Object} - The width and height of the video
  */
 function getVideoDimensions(videoElement) {
+    if (!videoElement) return { width: 0, height: 0 };
     return {
         width: videoElement.videoWidth,
         height: videoElement.videoHeight
@@ -79,9 +82,10 @@ function isCameraActive() {
     return videoStream !== null;
 }
 
-export { 
-    initializeCamera, 
-    stopCamera, 
-    getVideoDimensions, 
-    isCameraActive 
+// Export camera management functions
+window.CameraManager = {
+    initializeCamera,
+    stopCamera,
+    getVideoDimensions,
+    isCameraActive
 };
