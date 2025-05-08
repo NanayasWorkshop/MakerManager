@@ -112,7 +112,8 @@ def process_unknown_scan(request, code):
     # If we get here, we couldn't find the code in our database
     return JsonResponse({
         'success': False,
-        'error': 'Unrecognized code. This doesn\'t match any known job, material, or machine.'
+        'error': 'Unrecognized code. This doesn\'t match any known job, material, or machine.',
+        'scanned_code': code  # Add the scanned code to the response
     })
 
 def process_job_scan(request, job_id):
@@ -142,12 +143,14 @@ def process_job_scan(request, job_id):
     except Job.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': f'No job found with ID {job_id}'
+            'error': f'No job found with ID {job_id}',
+            'scanned_code': job_id  # Add the scanned code
         })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': f'Error processing job scan: {str(e)}'
+            'error': f'Error processing job scan: {str(e)}',
+            'scanned_code': job_id  # Add the scanned code
         })
 
 def process_material_scan(request, material_id):
@@ -165,7 +168,8 @@ def process_material_scan(request, material_id):
         if not material:
             return JsonResponse({
                 'success': False,
-                'error': f'No material found with ID or serial number {material_id}'
+                'error': f'No material found with ID or serial number {material_id}',
+                'scanned_code': material_id  # Add the scanned code
             })
         
         # Record scan in history
@@ -189,7 +193,8 @@ def process_material_scan(request, material_id):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': f'Error processing material scan: {str(e)}'
+            'error': f'Error processing material scan: {str(e)}',
+            'scanned_code': material_id  # Add the scanned code
         })
 
 def process_machine_scan(request, machine_id):
@@ -205,7 +210,8 @@ def process_machine_scan(request, machine_id):
         if not machine:
             return JsonResponse({
                 'success': False,
-                'error': f'No machine found with ID or serial number {machine_id}'
+                'error': f'No machine found with ID or serial number {machine_id}',
+                'scanned_code': machine_id  # Add the scanned code
             })
         
         # Record scan in history
@@ -229,7 +235,8 @@ def process_machine_scan(request, machine_id):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': f'Error processing machine scan: {str(e)}'
+            'error': f'Error processing machine scan: {str(e)}',
+            'scanned_code': machine_id  # Add the scanned code
         })
 
 @login_required
@@ -261,6 +268,7 @@ def manual_entry(request):
                 return redirect('scanned_job', job_id=job.job_id)
             except Job.DoesNotExist:
                 messages.error(request, f'No job found with ID {item_id}')
+                return render(request, 'scanning/result.html', {'scanned_code': item_id})
         elif code_type == 'material':
             try:
                 # Try internal ID first
@@ -275,9 +283,9 @@ def manual_entry(request):
                 if material:
                     return redirect('scanned_material', material_id=material.material_id)
                 else:
-                    messages.error(request, f'No material found with ID or serial number {item_id}')
+                    return render(request, 'scanning/result.html', {'scanned_code': item_id})
             except Exception:
-                messages.error(request, f'Error looking up material: {item_id}')
+                return render(request, 'scanning/result.html', {'scanned_code': item_id})
         elif code_type == 'machine':
             try:
                 # Try internal ID first
@@ -290,9 +298,9 @@ def manual_entry(request):
                 if machine:
                     return redirect('scanned_machine', machine_id=machine.machine_id)
                 else:
-                    messages.error(request, f'No machine found with ID or serial number {item_id}')
+                    return render(request, 'scanning/result.html', {'scanned_code': item_id})
             except Exception:
-                messages.error(request, f'Error looking up machine: {item_id}')
+                return render(request, 'scanning/result.html', {'scanned_code': item_id})
         else:
             # Unknown code type - try to find it in the database
             try:
@@ -311,9 +319,9 @@ def manual_entry(request):
                     return redirect('scanned_machine', machine_id=machine.machine_id)
                 
                 # If we got here, couldn't find it
-                messages.error(request, 'Unrecognized code. This doesn\'t match any known job, material, or machine.')
+                return render(request, 'scanning/result.html', {'scanned_code': item_id})
             except Exception:
-                messages.error(request, 'Error processing the entered code')
+                return render(request, 'scanning/result.html', {'scanned_code': item_id})
         
         return redirect('scan')
     
@@ -384,4 +392,15 @@ def scanned_machine(request, machine_id):
         'active_job': active_job,
         'js_file': 'machine_detail.js'
     }
+    return render(request, 'scanning/result.html', context)
+
+@login_required
+def not_found_view(request):
+    """Handle case when scanned item is not found"""
+    scanned_code = request.GET.get('code', '')
+    
+    context = {
+        'scanned_code': scanned_code
+    }
+    
     return render(request, 'scanning/result.html', context)

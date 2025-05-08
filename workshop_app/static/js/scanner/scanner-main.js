@@ -184,13 +184,19 @@ async function handleDetectedCode(codeData, elements, csrfToken) {
             // Handle successful scan
             handleSuccessfulScan(data, elements);
         } else {
-            // Handle scan error
-            showScanError(
-                data.error, 
-                loadingElement, 
-                () => startScanning(elements, csrfToken),
-                manualEntryForm
-            );
+            // Check if there's a scanned code in the response
+            if (data.scanned_code) {
+                // Navigate to the result page with the scanned code in the URL
+                window.location.href = `/scan/not-found/?code=${encodeURIComponent(data.scanned_code)}`;
+            } else {
+                // Handle scan error
+                showScanError(
+                    data.error, 
+                    loadingElement, 
+                    () => startScanning(elements, csrfToken),
+                    manualEntryForm
+                );
+            }
         }
     } catch (error) {
         showScanError(

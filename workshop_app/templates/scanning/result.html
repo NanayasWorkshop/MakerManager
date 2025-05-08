@@ -321,8 +321,16 @@
     <div class="card">
         <div class="card-body text-center">
             <h4 class="mb-3">No Item Found</h4>
+            {% if scanned_code %}
+            <div class="alert alert-warning">
+                <p><strong>Scanned Code:</strong> {{ scanned_code }}</p>
+                <p>This code couldn't be matched to any item in the system.</p>
+            </div>
+            {% else %}
             <p>The scanned item could not be found in the system.</p>
+            {% endif %}
             <a href="{% url 'scan' %}" class="btn btn-primary">Try Again</a>
+            <a href="{% url 'manual_entry' %}" class="btn btn-outline-secondary">Manual Entry</a>
         </div>
     </div>
     {% endif %}

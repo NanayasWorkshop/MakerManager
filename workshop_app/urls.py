@@ -19,6 +19,7 @@ urlpatterns = [
     path('scan/job/<str:job_id>/', scanning_views.scanned_job, name='scanned_job'),
     path('scan/material/<str:material_id>/', scanning_views.scanned_material, name='scanned_material'),
     path('scan/machine/<str:machine_id>/', scanning_views.scanned_machine, name='scanned_machine'),
+    path('scan/not-found/', scanning_views.not_found_view, name='scan_not_found'),
     
     # Material URLs
     path('materials/', material_views.material_list, name='material_list'),
