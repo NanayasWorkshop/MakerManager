@@ -64,8 +64,9 @@ def validate_material_id(material_id):
     Returns:
         bool: True if valid, False otherwise
     """
-    # Updated pattern: Match CATEG-TYPE-XXXXX format (e.g. MET-STL-00001)
-    pattern = r'^[A-Z]{2,5}-[A-Z]{2,5}-\d{5}$'
+    # Updated pattern: Match various material ID formats
+    # Includes format like FLMRL-PLA-7963
+    pattern = r'^[A-Z]{2,5}-[A-Z]{2,5}-\d{1,5}$'
     return bool(re.match(pattern, material_id, re.IGNORECASE))
 
 def validate_machine_id(machine_id):
@@ -109,8 +110,8 @@ def determine_code_type(code):
     # Check if it contains any identifiable prefixes
     if code.startswith('J-') or code.startswith('JOB-'):
         return 'job'
-    # Check if code follows CATEG-TYPE-XXXXX format (3 parts separated by hyphens, last part numeric)
-    elif re.match(r'^[A-Z]{2,5}-[A-Z]{2,5}-\d{5}$', code, re.IGNORECASE):
+    # Check for typical material ID formats with 2 or more parts separated by hyphens
+    elif re.match(r'^[A-Z]+-[A-Z]+-\d+$', code, re.IGNORECASE):
         return 'material'
     elif code.startswith('MC-') or code.startswith('MACH-'):
         return 'machine'
@@ -138,8 +139,8 @@ def parse_code(code):
     # Clean the code
     code = code.strip()
     
-    # Pattern for CATEG-TYPE-XXXXX format (material IDs)
-    material_pattern = r'(?:.*/)?((?:[A-Z]{2,5}-[A-Z]{2,5}-\d{5}))(?:/.*)?$'
+    # Pattern for common material ID format like FLMRL-PLA-7963
+    material_pattern = r'(?:.*/)?((?:[A-Z]+-[A-Z]+-\d+))(?:/.*)?$'
     material_match = re.search(material_pattern, code, re.IGNORECASE)
     
     if material_match:
