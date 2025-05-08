@@ -1,0 +1,30 @@
+/* General Styles */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+/* Active Job Indicator */
+.active-job-indicator {
+    background-color: rgba(25, 135, 84, 0.1);
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+/* Avatar Circle */
+.avatar-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    font-size: 2rem;
+}
+
+.initials {
+    font-weight: bold;
+}
+

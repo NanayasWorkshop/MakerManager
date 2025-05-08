@@ -1,35 +1,3 @@
-/* Base CSS for Workshop Management System */
-
-/* General Styles */
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-main {
-    flex: 1;
-}
-
-/* Active Job Indicator */
-.active-job-indicator {
-    background-color: rgba(25, 135, 84, 0.1);
-    border-radius: 0.25rem;
-    margin-right: 0.5rem;
-}
-
-/* Avatar Circle */
-.avatar-circle {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    font-size: 2rem;
-}
-
-.initials {
-    font-weight: bold;
-}
-
 /* Card Styles */
 .card {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
@@ -67,4 +35,36 @@ main {
 .progress-bar {
     font-weight: 600;
     min-width: 2rem;
+}
+
+/* Form Styles */
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section-title {
+    margin-bottom: 15px;
+    color: #0d6efd;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+
+/* Filter Form */
+.filter-form {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-form .form-label {
+    font-weight: 500;
 }
