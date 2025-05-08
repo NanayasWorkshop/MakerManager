@@ -4,7 +4,7 @@ from workshop_app.models.material_models import (
     AttachmentType, MaterialAttachment
 )
 from workshop_app.models.machine_models import (
-    MachineType, Machine
+    MachineType, Machine, MachineUsage
 )
 from workshop_app.models.job_models import (
     JobStatus, Job, JobMaterial
@@ -23,7 +23,7 @@ from workshop_app.models.transaction_models import (
 __all__ = [
     'MaterialCategory', 'MaterialType', 'Material', 
     'AttachmentType', 'MaterialAttachment',
-    'MachineType', 'Machine',
+    'MachineType', 'Machine', 'MachineUsage',
     'JobStatus', 'Job', 'JobMaterial',
     'Client', 'ContactPerson',
     'Operator', 'StaffSettings',

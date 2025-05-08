@@ -49,3 +49,23 @@ class Machine(models.Model):
     
     def is_available(self):
         return self.status == 'available'
+
+class MachineUsage(models.Model):
+    """Track machine usage instances"""
+    machine = models.ForeignKey(Machine, on_delete=models.CASCADE, related_name='usages')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
+    setup_time = models.IntegerField(default=0)  # In minutes
+    cleanup_time = models.IntegerField(default=0)  # In minutes
+    job_reference = models.CharField(max_length=100)
+    operator_name = models.CharField(max_length=100)
+    notes = models.TextField(blank=True)
+    
+    # Cost fields
+    setup_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    operation_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cleanup_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.machine.name} - {self.start_time}"
