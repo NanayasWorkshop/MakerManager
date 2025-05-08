@@ -4,6 +4,7 @@ MakerVenv/
 #Picutres
 data/
 media/
+workshop_app/management/
 
 # Python cache files
 __pycache__/
