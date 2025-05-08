@@ -64,8 +64,8 @@ def validate_material_id(material_id):
     Returns:
         bool: True if valid, False otherwise
     """
-    # Example pattern: M-12345 or MAT-12345
-    pattern = r'^(M|MAT)-\d{1,6}$'
+    # Updated pattern: Match CATEG-TYPE-XXXXX format (e.g. MET-STL-00001)
+    pattern = r'^[A-Z]{2,5}-[A-Z]{2,5}-\d{5}$'
     return bool(re.match(pattern, material_id, re.IGNORECASE))
 
 def validate_machine_id(machine_id):
@@ -109,7 +109,8 @@ def determine_code_type(code):
     # Check if it contains any identifiable prefixes
     if code.startswith('J-') or code.startswith('JOB-'):
         return 'job'
-    elif code.startswith('M-') or code.startswith('MAT-'):
+    # Check if code follows CATEG-TYPE-XXXXX format (3 parts separated by hyphens, last part numeric)
+    elif re.match(r'^[A-Z]{2,5}-[A-Z]{2,5}-\d{5}$', code, re.IGNORECASE):
         return 'material'
     elif code.startswith('MC-') or code.startswith('MACH-'):
         return 'machine'
@@ -137,15 +138,22 @@ def parse_code(code):
     # Clean the code
     code = code.strip()
     
-    # URL pattern
-    url_pattern = r'(?:.*/)?((?:J|JOB|M|MAT|MC|MACH)-\d{1,6})(?:/.*)?$'
+    # Pattern for CATEG-TYPE-XXXXX format (material IDs)
+    material_pattern = r'(?:.*/)?((?:[A-Z]{2,5}-[A-Z]{2,5}-\d{5}))(?:/.*)?$'
+    material_match = re.search(material_pattern, code, re.IGNORECASE)
+    
+    if material_match:
+        return material_match.group(1)
+    
+    # URL pattern for job and machine IDs
+    url_pattern = r'(?:.*/)?((?:J|JOB|MC|MACH)-\d{1,6})(?:/.*)?$'
     url_match = re.search(url_pattern, code, re.IGNORECASE)
     
     if url_match:
         return url_match.group(1)
     
-    # Direct ID pattern for our internal codes
-    id_pattern = r'((?:J|JOB|M|MAT|MC|MACH)-\d{1,6})'
+    # Direct ID pattern for job and machine IDs
+    id_pattern = r'((?:J|JOB|MC|MACH)-\d{1,6})'
     id_match = re.search(id_pattern, code, re.IGNORECASE)
     
     if id_match:
