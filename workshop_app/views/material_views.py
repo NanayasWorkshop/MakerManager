@@ -13,7 +13,8 @@ from decimal import Decimal
 
 from workshop_app.models import (
     Material, MaterialCategory, MaterialType, 
-    MaterialTransaction, JobMaterial, StaffSettings
+    MaterialTransaction, JobMaterial, StaffSettings,
+    MaterialAttachment, AttachmentType
 )
 from workshop_app.forms import MaterialForm, MaterialFilterForm, MaterialTransactionForm
 
@@ -198,6 +199,12 @@ def edit_material(request, material_id):
     categories = MaterialCategory.objects.all().order_by('name')
     material_types = MaterialType.objects.all().order_by('name')
     
+    # Get attachment types for dropdowns
+    attachment_types = AttachmentType.objects.all().order_by('name')
+    
+    # Get existing attachments
+    attachments = MaterialAttachment.objects.filter(material=material).order_by('-upload_date')
+    
     if request.method == 'POST':
         form = MaterialForm(request.POST, instance=material)
         if form.is_valid():
@@ -228,7 +235,36 @@ def edit_material(request, material_id):
                     notes=f'Manual stock adjustment from {old_stock} to {new_stock}'
                 )
             
-            messages.success(request, f'Material "{material.name}" has been updated')
+            # Handle attachment upload if present
+            attachment_type_id = request.POST.get('attachment_type')
+            attachment_description = request.POST.get('attachment_description', '')
+            attachment_file = request.FILES.get('attachment_file')
+            custom_type = request.POST.get('custom_type', '')
+            
+            if attachment_type_id and attachment_file:
+                try:
+                    # If custom type is selected, use None for attachment_type
+                    if attachment_type_id == 'custom':
+                        attachment_type = None
+                    else:
+                        attachment_type = AttachmentType.objects.get(id=attachment_type_id)
+                    
+                    # Create new attachment
+                    attachment = MaterialAttachment.objects.create(
+                        material=material,
+                        attachment_type=attachment_type,
+                        custom_type=custom_type if attachment_type_id == 'custom' else '',
+                        description=attachment_description,
+                        file=attachment_file,
+                        uploaded_by=request.user
+                    )
+                    
+                    messages.success(request, f'Material "{material.name}" has been updated with new attachment')
+                except Exception as e:
+                    messages.error(request, f'Error adding attachment: {str(e)}')
+            else:
+                messages.success(request, f'Material "{material.name}" has been updated')
+            
             return redirect('material_detail', material_id=material.material_id)
         else:
             messages.error(request, 'Please correct the errors below')
@@ -240,6 +276,8 @@ def edit_material(request, material_id):
         'form': form,
         'categories': categories,
         'material_types': material_types,
+        'attachment_types': attachment_types,
+        'attachments': attachments,
         'is_edit': True
     }
     
@@ -563,3 +601,24 @@ def start_timer(request):
             'success': False,
             'error': str(e)
         })
+
+@login_required
+def delete_material_attachment(request, material_id, attachment_id):
+    """Delete a material attachment"""
+    material = get_object_or_404(Material, material_id=material_id)
+    attachment = get_object_or_404(MaterialAttachment, id=attachment_id, material=material)
+    
+    try:
+        # Delete the file from storage
+        if attachment.file:
+            if os.path.isfile(attachment.file.path):
+                os.remove(attachment.file.path)
+        
+        # Delete the database record
+        attachment.delete()
+        
+        messages.success(request, 'Attachment deleted successfully')
+    except Exception as e:
+        messages.error(request, f'Error deleting attachment: {str(e)}')
+    
+    return redirect('edit_material', material_id=material_id)

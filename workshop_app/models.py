@@ -25,6 +25,12 @@ class MaterialType(models.Model):
     class Meta:
         unique_together = [['category', 'code']]
 
+class AttachmentType(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    
+    def __str__(self):
+        return self.name
+
 class Material(models.Model):
     material_id = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
@@ -57,6 +63,23 @@ class Material(models.Model):
         if self.minimum_stock_level:
             return self.current_stock <= self.minimum_stock_level
         return False
+
+class MaterialAttachment(models.Model):
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='attachments')
+    attachment_type = models.ForeignKey(AttachmentType, on_delete=models.CASCADE)
+    custom_type = models.CharField(max_length=50)
+    description = models.CharField(max_length=100)
+    file = models.FileField(upload_to='material_attachments/')
+    upload_date = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.material.name} - {self.get_type_display()}"
+    
+    def get_type_display(self):
+        if self.attachment_type:
+            return self.attachment_type.name
+        return self.custom_type or "Unknown"
 
 class MachineType(models.Model):
     code = models.CharField(max_length=10, unique=True)

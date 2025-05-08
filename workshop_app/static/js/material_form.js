@@ -81,4 +81,50 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Toggle custom type field based on attachment type selection
+    const attachmentTypeSelect = document.getElementById('attachment_type');
+    const customTypeField = document.querySelector('.custom-type-field');
+
+    if (attachmentTypeSelect && customTypeField) {
+        attachmentTypeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customTypeField.style.display = 'block';
+                document.getElementById('custom_type').setAttribute('required', 'required');
+            } else {
+                customTypeField.style.display = 'none';
+                document.getElementById('custom_type').removeAttribute('required');
+            }
+        });
+    }
+
+    // Handle attachment upload without page reload
+    const addAttachmentBtn = document.getElementById('addAttachmentBtn');
+    if (addAttachmentBtn) {
+        addAttachmentBtn.addEventListener('click', function() {
+            // Get form data
+            const attachmentType = document.getElementById('attachment_type').value;
+            const customType = document.getElementById('custom_type').value;
+            const description = document.getElementById('attachment_description').value;
+            const file = document.getElementById('attachment_file').files[0];
+            
+            if (!attachmentType) {
+                alert('Please select an attachment type');
+                return;
+            }
+            
+            if (attachmentType === 'custom' && !customType) {
+                alert('Please enter a custom type');
+                return;
+            }
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            // Submit the form to handle the file upload
+            document.getElementById('editMaterialForm').submit();
+        });
+    }
 });

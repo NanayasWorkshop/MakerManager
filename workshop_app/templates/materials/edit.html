@@ -169,6 +169,104 @@
                             </div>
                         </div>
                         
+                        <!-- Document Attachments -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Documents & Attachments</h5>
+                            
+                            <!-- Display existing attachments if any -->
+                            {% if attachments %}
+                            <div class="mb-4">
+                                <h6>Current Attachments</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Description</th>
+                                                <th>File</th>
+                                                <th>Upload Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for attachment in attachments %}
+                                            <tr>
+                                                <td>{{ attachment.attachment_type.name }}{% if attachment.custom_type %} ({{ attachment.custom_type }}){% endif %}</td>
+                                                <td>{{ attachment.description }}</td>
+                                                <td>
+                                                    {% if attachment.file %}
+                                                    <a href="{{ attachment.file.url }}" target="_blank">
+                                                        {% if attachment.file.name|lower|endswith:".pdf" %}
+                                                        <i class="bi bi-file-pdf"></i>
+                                                        {% elif attachment.file.name|lower|endswith:".jpg" or attachment.file.name|lower|endswith:".jpeg" or attachment.file.name|lower|endswith:".png" %}
+                                                        <i class="bi bi-file-image"></i>
+                                                        {% else %}
+                                                        <i class="bi bi-file"></i>
+                                                        {% endif %}
+                                                        View File
+                                                    </a>
+                                                    {% else %}
+                                                    No file
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ attachment.upload_date|date:"Y-m-d H:i" }}</td>
+                                                <td>
+                                                    <a href="{% url 'delete_material_attachment' material.material_id attachment.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this attachment?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- New attachment upload form -->
+                            <div class="card bg-light mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Add New Attachment</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="attachment_type" class="form-label">Attachment Type</label>
+                                            <select class="form-select" id="attachment_type" name="attachment_type">
+                                                <option value="">Select Type</option>
+                                                {% for type in attachment_types %}
+                                                <option value="{{ type.id }}">{{ type.name }}</option>
+                                                {% endfor %}
+                                                <option value="custom">Other (specify)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3 custom-type-field" style="display: none;">
+                                            <label for="custom_type" class="form-label">Custom Type</label>
+                                            <input type="text" class="form-control" id="custom_type" name="custom_type">
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label for="attachment_description" class="form-label">Description</label>
+                                            <input type="text" class="form-control" id="attachment_description" name="attachment_description">
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label for="attachment_file" class="form-label">File</label>
+                                            <input type="file" class="form-control" id="attachment_file" name="attachment_file">
+                                            <div class="form-text">Max file size: 10MB. Allowed types: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-end">
+                                        <button type="button" class="btn btn-success" id="addAttachmentBtn">
+                                            <i class="bi bi-plus-circle"></i> Add Attachment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='{% url 'material_detail' material.material_id %}'">Cancel</button>
                             <button type="submit" class="btn btn-primary">Save Changes</button>

@@ -18,6 +18,19 @@
     color: #dc3545;
 }
 
+/* Attachment table styles */
+.table-responsive {
+    margin-bottom: 20px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.custom-type-field {
+    transition: all 0.3s ease;
+}
+
 @media (max-width: 767.98px) {
     .form-section {
         margin-bottom: 20px;

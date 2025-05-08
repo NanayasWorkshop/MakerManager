@@ -29,6 +29,9 @@ urlpatterns = [
     path('materials/<str:material_id>/qr-code/', material_views.get_material_qr_code, name='material_qr_code'),
     path('materials/<str:material_id>/history/', material_views.material_history, name='material_history'),
     path('materials/<str:material_id>/edit/', material_views.edit_material, name='edit_material'),
+    path('materials/<str:material_id>/attachments/<int:attachment_id>/delete/', 
+         material_views.delete_material_attachment, 
+         name='delete_material_attachment'),
     
     # Machine URLs
     path('machines/<str:machine_id>/start-usage/', machine_views.start_machine_usage, name='start_machine_usage'),
