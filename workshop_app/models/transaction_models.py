@@ -1,3 +1,5 @@
+# workshop_app/models/transaction_models.py
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -7,6 +9,7 @@ class MaterialTransaction(models.Model):
         ('return', 'Return'),
         ('adjustment', 'Adjustment'),
         ('purchase', 'Purchase'),
+        ('restock', 'Restock'),  # Added new type
     ]
     
     # Using string reference to avoid circular import
@@ -17,6 +20,12 @@ class MaterialTransaction(models.Model):
     job_reference = models.CharField(max_length=100)
     operator_name = models.CharField(max_length=100)
     notes = models.TextField(blank=True)
+    
+    # New fields for restock
+    invoice = models.FileField(upload_to='invoices/', blank=True, null=True)
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    supplier_name = models.CharField(max_length=100, blank=True)
+    purchase_date = models.DateField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.get_transaction_type_display()} of {self.quantity} - {self.material.name}"

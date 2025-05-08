@@ -1,6 +1,8 @@
+# workshop_app/forms/material_forms.py
+
 from django import forms
 from django.core.exceptions import ValidationError
-from workshop_app.models import Material, MaterialCategory, MaterialType
+from workshop_app.models import Material, MaterialCategory, MaterialType, MaterialTransaction
 
 class MaterialFilterForm(forms.Form):
     """Form for filtering materials in list view"""
@@ -95,3 +97,106 @@ class MaterialTransactionForm(forms.Form):
             'rows': 2,
         })
     )
+
+class MaterialRestockForm(forms.Form):
+    """Form for material restocking"""
+    quantity = forms.DecimalField(
+        min_value=0.01,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '0.01',
+            'step': '0.01',
+            'required': True
+        })
+    )
+    
+    purchase_price = forms.DecimalField(
+        min_value=0.01,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '0.01',
+            'step': '0.01',
+            'required': True
+        })
+    )
+    
+    supplier_name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+        })
+    )
+    
+    purchase_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        })
+    )
+    
+    invoice = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control'
+        })
+    )
+    
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+        })
+    )
+    
+    update_location = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+    
+    new_location = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'disabled': 'disabled'
+        })
+    )
+    
+    update_min_stock = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+    
+    new_min_stock = forms.DecimalField(
+        required=False,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '0',
+            'step': '0.01',
+            'disabled': 'disabled'
+        })
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        update_location = cleaned_data.get('update_location')
+        new_location = cleaned_data.get('new_location')
+        
+        if update_location and not new_location:
+            self.add_error('new_location', 'New location is required when updating location')
+            
+        update_min_stock = cleaned_data.get('update_min_stock')
+        new_min_stock = cleaned_data.get('new_min_stock')
+        
+        if update_min_stock and not new_min_stock:
+            self.add_error('new_min_stock', 'New minimum stock level is required when updating')
+            
+        return cleaned_data

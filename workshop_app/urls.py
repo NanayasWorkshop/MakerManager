@@ -1,3 +1,5 @@
+# workshop_app/urls.py
+
 from django.urls import path
 from workshop_app.views import auth_views, dashboard_views, scanning_views, material_views, machine_views
 
@@ -27,6 +29,8 @@ urlpatterns = [
     path('materials/<str:material_id>/', material_views.material_detail, name='material_detail'),
     path('materials/<str:material_id>/withdraw/', material_views.withdraw_material, name='withdraw_material'),
     path('materials/<str:material_id>/return/', material_views.return_material, name='return_material'),
+    path('materials/<str:material_id>/restock/', material_views.restock_material_form, name='restock_material_form'),
+    path('materials/<str:material_id>/restock-action/', material_views.restock_material, name='restock_material'),
     path('materials/<str:material_id>/qr-code/', material_views.get_material_qr_code, name='material_qr_code'),
     path('materials/<str:material_id>/history/', material_views.material_history, name='material_history'),
     path('materials/<str:material_id>/edit/', material_views.edit_material, name='edit_material'),

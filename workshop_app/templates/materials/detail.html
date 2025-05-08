@@ -140,6 +140,9 @@
                             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#returnModal">
                                 <i class="bi bi-plus-circle"></i> Return
                             </button>
+                            <a href="{% url 'restock_material_form' material.material_id %}" class="btn btn-info">
+                                <i class="bi bi-box-seam"></i> Restock
+                            </a>
                         </div>
                         <div>
                             <a href="{% url 'edit_material' material.material_id %}" class="btn btn-outline-primary">
@@ -169,8 +172,12 @@
                                 <h6 class="mb-1">
                                     {% if transaction.transaction_type == 'withdrawal' %}
                                     <span class="badge bg-warning text-dark">Withdrawal</span>
-                                    {% else %}
+                                    {% elif transaction.transaction_type == 'return' %}
                                     <span class="badge bg-success">Return</span>
+                                    {% elif transaction.transaction_type == 'restock' %}
+                                    <span class="badge bg-info">Restock</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ transaction.get_transaction_type_display }}</span>
                                     {% endif %}
                                     {{ transaction.quantity }} {{ material.unit_of_measurement }}
                                 </h6>
@@ -180,6 +187,13 @@
                             <p class="mb-1"><small>Operator: {{ transaction.operator_name }}</small></p>
                             {% if transaction.notes %}
                             <small class="text-muted">Notes: {{ transaction.notes }}</small>
+                            {% endif %}
+                            {% if transaction.invoice %}
+                            <p class="mt-1 mb-0">
+                                <a href="{{ transaction.invoice.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-file-earmark-text"></i> View Invoice
+                                </a>
+                            </p>
                             {% endif %}
                         </div>
                         {% endfor %}
