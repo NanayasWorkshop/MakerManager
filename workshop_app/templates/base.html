@@ -50,6 +50,15 @@
                                 <a class="dropdown-item" href="{% url 'add_material' %}">Add New Material</a>
                             </div>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="machinesDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-tools"></i> Machines
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'machine_list' %}">List Machines</a>
+                                <a class="dropdown-item" href="{% url 'add_machine' %}">Add New Machine</a>
+                            </div>
+                        </li>
                         <!-- Additional navigation items can be added here -->
                     </ul>
                     

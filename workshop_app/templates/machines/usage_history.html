@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Usage History: {{ machine.name }} - Workshop Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-3">
+        <a href="{% url 'machine_detail' machine.machine_id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Machine
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Machine Information -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Machine Information</h5>
+                </div>
+                <div class="card-body">
+                    <h4>{{ machine.name }}</h4>
+                    <p class="text-muted mb-3">{{ machine.machine_id }}</p>
+                    
+                    <dl class="row">
+                        <dt class="col-sm-5">Status:</dt>
+                        <dd class="col-sm-7">
+                            {% if machine.status == 'available' %}
+                            <span class="badge bg-success">Available</span>
+                            {% elif machine.status == 'in_use' %}
+                            <span class="badge bg-warning text-dark">In Use</span>
+                            {% elif machine.status == 'maintenance' %}
+                            <span class="badge bg-info text-white">Maintenance</span>
+                            {% else %}
+                            <span class="badge bg-danger">Out of Order</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-5">Type:</dt>
+                        <dd class="col-sm-7">{{ machine.machine_type.name }}</dd>
+                        
+                        <dt class="col-sm-5">Location:</dt>
+                        <dd class="col-sm-7">{{ machine.location_in_workshop }}</dd>
+                        
+                        <dt class="col-sm-5">Hourly Rate:</dt>
+                        <dd class="col-sm-7">{% if machine.hourly_rate %}${{ machine.hourly_rate }}{% else %}Not set{% endif %}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Usage History -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Complete Usage History</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if usage_history %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Duration</th>
+                                    <th>Job</th>
+                                    <th>Operator</th>
+                                    <th>Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usage in usage_history %}
+                                <tr>
+                                    <td>{{ usage.start_time|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        {% if usage.end_time %}
+                                        {{ usage.end_time|date:"Y-m-d H:i" }}
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">In Progress</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if usage.end_time %}
+                                        {{ usage.start_time|timesince:usage.end_time }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ usage.job_reference }}</td>
+                                    <td>{{ usage.operator_name }}</td>
+                                    <td>
+                                        {% if usage.total_cost %}
+                                        ${{ usage.total_cost }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center">
+                        <p class="mb-0">No usage history found for this machine.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

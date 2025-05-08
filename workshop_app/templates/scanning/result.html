@@ -317,6 +317,39 @@
             </div>
         </div>
     </div>
+    
+    <!-- Quick Actions for Machine -->
+    {% if machine %}
+    <!-- Add conditional to handle different machine statuses -->
+    <div class="machine-actions mt-3">
+        {% if machine.status == 'available' and is_certified %}
+        <form id="quickStartForm" method="post" action="{% url 'start_machine_usage' machine.machine_id %}">
+            {% csrf_token %}
+            <input type="hidden" name="setup_time" value="{{ machine.setup_time|default:15 }}">
+            <input type="hidden" name="estimated_usage" value="60">
+            <input type="hidden" name="notes" value="Started from scanner">
+            <button type="submit" class="btn btn-success" {% if not active_job %}disabled{% endif %}>
+                <i class="bi bi-play-circle"></i> Quick Start Machine
+            </button>
+            {% if not active_job %}
+            <div class="alert alert-warning mt-2">
+                <i class="bi bi-exclamation-triangle"></i> You need an active job to use this machine.
+                <a href="{% url 'scan' %}" class="btn btn-sm btn-primary ms-2">Scan Job</a>
+            </div>
+            {% endif %}
+        </form>
+        {% elif machine.status == 'in_use' and machine.current_job == active_job %}
+        <form id="quickStopForm" method="post" action="{% url 'stop_machine_usage' machine.machine_id %}">
+            {% csrf_token %}
+            <input type="hidden" name="cleanup_time" value="{{ machine.cleanup_time|default:10 }}">
+            <input type="hidden" name="notes" value="Stopped from scanner">
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-stop-circle"></i> Quick Stop Machine
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
     {% endif %}
     
     <!-- No Result Message -->

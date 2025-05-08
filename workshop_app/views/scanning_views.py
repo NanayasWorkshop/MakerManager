@@ -371,6 +371,15 @@ def scanned_machine(request, machine_id):
     """Handle a scanned machine"""
     machine = get_object_or_404(Machine, machine_id=machine_id)
     
+    # If POST from quick start form, process it
+    if request.method == 'POST':
+        # Check if user is trying to start machine
+        if 'setup_time' in request.POST:
+            return start_machine_usage(request, machine_id)
+        # Check if user is trying to stop machine
+        elif 'cleanup_time' in request.POST:
+            return stop_machine_usage(request, machine_id)
+    
     # Check if user is certified for this machine
     is_certified = False
     try:
@@ -390,7 +399,6 @@ def scanned_machine(request, machine_id):
         'machine': machine,
         'is_certified': is_certified,
         'active_job': active_job,
-        'js_file': 'machine_detail.js'
     }
     return render(request, 'scanning/result.html', context)
 

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add New Machine - Workshop Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/machine_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-3">
+        <a href="{% url 'machine_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Machines
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Add New Machine</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="addMachineForm">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Basic Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Machine Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="machine_type" class="form-label">Machine Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="machine_type" name="machine_type" required>
+                                        <option value="">Select Type</option>
+                                        {% for type in machine_types %}
+                                        <option value="{{ type.id }}">{{ type.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="manufacturer" class="form-label">Manufacturer <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="manufacturer" name="manufacturer" required>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="model_number" class="form-label">Model Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="model_number" name="model_number" required>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="serial_number" name="serial_number" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="location_in_workshop" class="form-label">Location <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="location_in_workshop" name="location_in_workshop" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="status" name="status" required>
+                                        <option value="available">Available</option>
+                                        <option value="maintenance">Maintenance</option>
+                                        <option value="out_of_order">Out of Order</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Technical Specifications -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Technical Specifications</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="working_area" class="form-label">Working Area</label>
+                                    <input type="text" class="form-control" id="working_area" name="working_area">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="power_requirements" class="form-label">Power Requirements</label>
+                                    <input type="text" class="form-control" id="power_requirements" name="power_requirements">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="maximum_work_speed" class="form-label">Maximum Work Speed</label>
+                                    <input type="text" class="form-control" id="maximum_work_speed" name="maximum_work_speed">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="precision" class="form-label">Precision</label>
+                                    <input type="text" class="form-control" id="precision" name="precision">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cost Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Cost Information</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="hourly_rate" class="form-label">Hourly Rate ($)</label>
+                                    <input type="number" class="form-control" id="hourly_rate" name="hourly_rate" min="0" step="0.01">
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="setup_time" class="form-label">Default Setup Time (min)</label>
+                                    <input type="number" class="form-control" id="setup_time" name="setup_time" min="0">
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="setup_rate" class="form-label">Setup Rate ($/hr)</label>
+                                    <input type="number" class="form-control" id="setup_rate" name="setup_rate" min="0" step="0.01">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="cleanup_time" class="form-label">Default Cleanup Time (min)</label>
+                                    <input type="number" class="form-control" id="cleanup_time" name="cleanup_time" min="0">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="cleanup_rate" class="form-label">Cleanup Rate ($/hr)</label>
+                                    <input type="number" class="form-control" id="cleanup_rate" name="cleanup_rate" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Acquisition Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Acquisition Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="purchase_date" class="form-label">Purchase Date</label>
+                                    <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="purchase_price" class="form-label">Purchase Price ($)</label>
+                                    <input type="number" class="form-control" id="purchase_price" name="purchase_price" min="0" step="0.01">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="supplier" class="form-label">Supplier <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="supplier" name="supplier" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="warranty_end_date" class="form-label">Warranty End Date</label>
+                                    <input type="date" class="form-control" id="warranty_end_date" name="warranty_end_date">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">Additional Information</h5>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='{% url 'machine_list' %}'">Cancel</button>
+                            <button type="submit" class="btn btn-success">Add Machine</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/machine_form.js' %}"></script>
+{% endblock %}

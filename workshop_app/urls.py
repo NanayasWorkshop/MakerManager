@@ -1,7 +1,17 @@
 # workshop_app/urls.py
 
 from django.urls import path
-from workshop_app.views import auth_views, dashboard_views, scanning_views, material_views, machine_views
+from workshop_app.views import auth_views, dashboard_views, scanning_views, material_views
+from workshop_app.views.machine_views import (
+    machine_list,
+    machine_detail,
+    machine_usage_history,
+    get_machine_qr_code,
+    add_machine,
+    edit_machine,
+    start_machine_usage,
+    stop_machine_usage
+)
 
 urlpatterns = [
     # Authentication URLs
@@ -39,8 +49,14 @@ urlpatterns = [
          name='delete_material_attachment'),
     
     # Machine URLs
-    path('machines/<str:machine_id>/start-usage/', machine_views.start_machine_usage, name='start_machine_usage'),
-    path('machines/<str:machine_id>/stop-usage/', machine_views.stop_machine_usage, name='stop_machine_usage'),
+    path('machines/', machine_list, name='machine_list'),
+    path('machines/add/', add_machine, name='add_machine'),
+    path('machines/<str:machine_id>/', machine_detail, name='machine_detail'),
+    path('machines/<str:machine_id>/edit/', edit_machine, name='edit_machine'),
+    path('machines/<str:machine_id>/usage-history/', machine_usage_history, name='machine_usage_history'),
+    path('machines/<str:machine_id>/start-usage/', start_machine_usage, name='start_machine_usage'),
+    path('machines/<str:machine_id>/stop-usage/', stop_machine_usage, name='stop_machine_usage'),
+    path('machines/<str:machine_id>/qr-code/', get_machine_qr_code, name='machine_qr_code'),
     
     # API endpoints
     path('api/active-job/', material_views.get_active_job, name='api_active_job'),

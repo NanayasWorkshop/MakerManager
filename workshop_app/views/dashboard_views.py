@@ -25,8 +25,18 @@ def dashboard(request):
         Q(created_by=request.user) | Q(owner=request.user)
     ).order_by('-created_date')[:5]
     
-    # Get available machines
-    available_machines = Machine.objects.filter(status='available')[:5]
+    # Get available machines the user is certified for
+    available_machines = []
+    try:
+        # If user has an operator profile, show machines they're certified for
+        operator = request.user.operator
+        available_machines = Machine.objects.filter(
+            status='available',
+            certified_operators=operator
+        )[:5]
+    except:
+        # If no operator profile, just show available machines
+        available_machines = Machine.objects.filter(status='available')[:5]
     
     # Get low stock materials
     low_stock_materials = Material.objects.filter(minimum_stock_alert=True)[:5]

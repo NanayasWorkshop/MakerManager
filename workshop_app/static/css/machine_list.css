@@ -1,0 +1,40 @@
+/* Machine list specific styles */
+.machine-table td {
+    vertical-align: middle;
+}
+
+.machine-filter {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.certification-badge {
+    margin-left: 0.5rem;
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-available {
+    background-color: #198754;
+}
+
+.status-in-use {
+    background-color: #ffc107;
+}
+
+.status-maintenance {
+    background-color: #0dcaf0;
+}
+
+.status-out-of-order {
+    background-color: #dc3545;
+}

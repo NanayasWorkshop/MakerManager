@@ -1,0 +1,49 @@
+/* Machine detail specific styles */
+.min-spec-indicator {
+    position: relative;
+    margin-top: -20px;
+}
+
+.min-spec-indicator .line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height: 15px;
+    width: 2px;
+    background-color: #dc3545;
+}
+
+.min-spec-indicator .label {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: #dc3545;
+    white-space: nowrap;
+}
+
+.usage-history {
+    margin-top: 20px;
+}
+
+.notes-section {
+    margin-top: 20px;
+}
+
+.machine-specs table {
+    width: 100%;
+}
+
+.machine-specs th {
+    width: 40%;
+}
+
+.machine-card {
+    transition: border-color 0.3s ease;
+}
+
+.machine-status {
+    font-weight: bold;
+    text-transform: uppercase;
+}

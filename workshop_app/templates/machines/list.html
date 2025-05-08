@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Machines - Workshop Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/machine_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Machine Management</h1>
+        <div>
+            <a href="{% url 'add_machine' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add New Machine
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="filter-form">
+        <form method="get" id="machineFilterForm">
+            <div class="row align-items-end g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ request.GET.search|default:'' }}"
+                           placeholder="Search by name, ID, or manufacturer...">
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Machine Type</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="">All Types</option>
+                        {% for type in machine_types %}
+                        <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"i" %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>Available</option>
+                        <option value="in_use" {% if request.GET.status == 'in_use' %}selected{% endif %}>In Use</option>
+                        <option value="maintenance" {% if request.GET.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                        <option value="out_of_order" {% if request.GET.status == 'out_of_order' %}selected{% endif %}>Out of Order</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Filter
+                    </button>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="true" id="operator" name="operator" 
+                               {% if request.GET.operator == 'true' %}checked{% endif %}>
+                        <label class="form-check-label" for="operator">
+                            Only show machines I'm certified for
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 d-flex justify-content-between">
+                    <div>
+                        <a href="{% url 'machine_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Machines Table -->
+    {% if machines %}
+    <div class="table-responsive">
+        <table class="table table-hover machine-table">
+            <thead class="table-light">
+                <tr>
+                    <th>Machine</th>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Certification</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for machine in machines %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ machine.name }}</div>
+                        <small class="text-muted">{{ machine.manufacturer }} {{ machine.model_number }}</small>
+                    </td>
+                    <td><span class="badge bg-secondary">{{ machine.machine_id }}</span></td>
+                    <td>{{ machine.machine_type.name }}</td>
+                    <td>{{ machine.location_in_workshop }}</td>
+                    <td>
+                        {% if machine.status == 'available' %}
+                        <span class="badge bg-success">Available</span>
+                        {% elif machine.status == 'in_use' %}
+                        <span class="badge bg-warning text-dark">In Use</span>
+                        {% elif machine.status == 'maintenance' %}
+                        <span class="badge bg-info text-white">Maintenance</span>
+                        {% else %}
+                        <span class="badge bg-danger">Out of Order</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if certification_status|get_item:machine.id %}
+                        <span class="badge bg-success">Certified</span>
+                        {% else %}
+                        <span class="badge bg-danger">Not Certified</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'machine_detail' machine.machine_id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if machine.status == 'available' and certification_status|get_item:machine.id %}
+                            <a href="{% url 'machine_detail' machine.machine_id %}" class="btn btn-sm btn-outline-success"
+                               data-bs-toggle="tooltip" title="Start Using">
+                                <i class="bi bi-play-fill"></i>
+                            </a>
+                            {% elif machine.status == 'in_use' and machine.current_job == active_job %}
+                            <a href="{% url 'machine_detail' machine.machine_id %}" class="btn btn-sm btn-outline-danger"
+                               data-bs-toggle="tooltip" title="Stop Using">
+                                <i class="bi bi-stop-fill"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Last</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <p class="mb-0">No machines found matching your criteria. Try adjusting your filters or <a href="{% url 'add_machine' %}">add a new machine</a>.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/machine_list.js' %}"></script>
+{% endblock %}

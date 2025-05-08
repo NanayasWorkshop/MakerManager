@@ -124,18 +124,26 @@
                 {% if available_machines %}
                 <div class="list-group list-group-flush">
                     {% for machine in available_machines %}
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <a href="{% url 'machine_detail' machine.machine_id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <i class="bi bi-tools me-2"></i>
                             {{ machine.name }}
                         </div>
-                        <span class="badge bg-secondary">{{ machine.machine_id }}</span>
+                        <div>
+                            <span class="badge bg-secondary">{{ machine.machine_id }}</span>
+                            {% if machine.status == 'available' and user.operator in machine.certified_operators.all %}
+                            <span class="badge bg-success ms-1">Ready</span>
+                            {% endif %}
+                        </div>
                     </a>
                     {% endfor %}
                 </div>
                 {% else %}
                 <p class="text-muted">No machines available.</p>
                 {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'machine_list' %}" class="btn btn-sm btn-outline-success">View All Machines</a>
             </div>
         </div>
     </div>
