@@ -66,8 +66,8 @@ class Material(models.Model):
 
 class MaterialAttachment(models.Model):
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='attachments')
-    attachment_type = models.ForeignKey(AttachmentType, on_delete=models.CASCADE)
-    custom_type = models.CharField(max_length=50)
+    attachment_type = models.ForeignKey(AttachmentType, on_delete=models.CASCADE)  # Required field
+    custom_type = models.CharField(max_length=50)  # Already matches the DB
     description = models.CharField(max_length=100)
     file = models.FileField(upload_to='material_attachments/')
     upload_date = models.DateTimeField(auto_now_add=True)
