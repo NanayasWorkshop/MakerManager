@@ -23,12 +23,12 @@
     <div class="filter-form">
         <form method="get" id="materialFilterForm">
             <div class="row align-items-end g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="search" class="form-label">Search</label>
                     <input type="text" class="form-control" id="search" name="search" value="{{ request.GET.search|default:'' }}"
                            placeholder="Search by name, ID, or supplier...">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="category" class="form-label">Category</label>
                     <select class="form-select" id="category" name="category">
                         <option value="">All Categories</option>
@@ -39,13 +39,24 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="type" class="form-label">Type</label>
                     <select class="form-select" id="type" name="type">
                         <option value="">All Types</option>
                         {% for type in material_types %}
                         <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"i" %}selected{% endif %}>
                             {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="color" class="form-label">Color</label>
+                    <select class="form-select" id="color" name="color">
+                        <option value="">All Colors</option>
+                        {% for color in colors %}
+                        <option value="{{ color }}" {% if request.GET.color == color %}selected{% endif %}>
+                            {{ color }}
                         </option>
                         {% endfor %}
                     </select>
@@ -59,11 +70,13 @@
                         <option value="available" {% if request.GET.stock == 'available' %}selected{% endif %}>In Stock</option>
                     </select>
                 </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Filter
+                    </button>
+                </div>
                 <div class="col-12 d-flex justify-content-between">
                     <div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-filter"></i> Apply Filters
-                        </button>
                         <a href="{% url 'material_list' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Clear Filters
                         </a>
@@ -79,6 +92,7 @@
                                 <li><a class="dropdown-item {% if request.GET.sort == 'stock' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=stock">Stock Level</a></li>
                                 <li><a class="dropdown-item {% if request.GET.sort == 'category' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=category">Category</a></li>
                                 <li><a class="dropdown-item {% if request.GET.sort == 'location' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=location">Location</a></li>
+                                <li><a class="dropdown-item {% if request.GET.sort == 'color' %}active{% endif %}" href="?{{ request.GET.urlencode }}&sort=color">Color</a></li>
                             </ul>
                         </div>
                     </div>
@@ -95,6 +109,7 @@
                 <tr>
                     <th>Image</th>
                     <th>Name</th>
+                    <th>Color</th>
                     <th>ID</th>
                     <th>Category</th>
                     <th>Type</th>
@@ -117,8 +132,9 @@
                     </td>
                     <td>
                         <div class="fw-bold">{{ material.name }}</div>
-                        <small class="text-muted">{{ material.color }} • {{ material.dimensions }}</small>
+                        <small class="text-muted">{{ material.dimensions }}</small>
                     </td>
+                    <td>{{ material.color|default:"-" }}</td>
                     <td><span class="badge bg-secondary">{{ material.material_id }}</span></td>
                     <td>{{ material.material_type.category.name }}</td>
                     <td>{{ material.material_type.name }}</td>

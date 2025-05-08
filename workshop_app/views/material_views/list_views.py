@@ -18,6 +18,7 @@ def material_list(request):
     category_id = request.GET.get('category', '')
     type_id = request.GET.get('type', '')
     stock_filter = request.GET.get('stock', '')
+    color_filter = request.GET.get('color', '')  # New color filter parameter
     sort_param = request.GET.get('sort', 'name')
     
     # Start with all materials
@@ -49,6 +50,10 @@ def material_list(request):
     elif stock_filter == 'available':
         materials = materials.filter(current_stock__gt=0)
     
+    # Apply color filter (new)
+    if color_filter:
+        materials = materials.filter(color__iexact=color_filter)
+    
     # Apply sorting
     if sort_param == 'name':
         materials = materials.order_by('name')
@@ -60,10 +65,17 @@ def material_list(request):
         materials = materials.order_by('material_type__category__name', 'material_type__name')
     elif sort_param == 'location':
         materials = materials.order_by('location_in_workshop')
+    elif sort_param == 'color':  # New sort option
+        materials = materials.order_by('color')
     
     # Get categories and types for filter dropdowns
     categories = MaterialCategory.objects.all().order_by('name')
     material_types = MaterialType.objects.all().order_by('name')
+    
+    # Get unique colors for color filter dropdown (new)
+    colors = Material.objects.values_list('color', flat=True).distinct().order_by('color')
+    # Filter out empty colors
+    colors = [color for color in colors if color]
     
     # Get material images directly using raw SQL - filter for attachment_type_id = 3 (Product)
     material_images = {}
@@ -88,6 +100,7 @@ def material_list(request):
         'categories': categories,
         'material_types': material_types,
         'material_images': material_images,
+        'colors': colors,  # Add colors to context
     }
     
     return render(request, 'materials/list.html', context)
