@@ -29,13 +29,8 @@
                     <p class="mt-2">Initializing camera...</p>
                 </div>
                 
-                <video id="scanner-video" class="w-100 d-none"></video>
-                
-                <div id="scanner-overlay" class="d-none">
-                    <div class="scanner-guides"></div>
-                </div>
-                
-                <canvas id="scanner-canvas" class="d-none"></canvas>
+                <!-- Scanner container -->
+                <div id="qr-reader" style="width: 100%;"></div>
             </div>
             
             <!-- Scanner Controls -->
@@ -51,6 +46,17 @@
                             <i class="bi bi-stop-circle"></i> Stop
                         </button>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Scanned Code Display -->
+            <div id="scannedCodeContainer" class="alert alert-info mb-3 d-none">
+                <h6>Last Scanned Code:</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <code id="scannedCodeValue" class="me-2" style="word-break: break-all;"></code>
+                    <button id="copyCodeButton" class="btn btn-sm btn-outline-primary" title="Copy to clipboard">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
                 </div>
             </div>
             
@@ -132,7 +138,227 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<script src="{% static 'js/scanner.js' %}" type="module"></script>
-{% endblock %}
+<!-- HTML5-QRCode library for barcode scanning -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const qrReaderElement = document.getElementById('qr-reader');
+    const startButton = document.getElementById('startScanButton');
+    const stopButton = document.getElementById('stopScanButton');
+    const loadingElement = document.getElementById('scanner-loading');
+    const manualEntryLink = document.getElementById('manualEntryLink');
+    const manualEntryForm = document.getElementById('manualEntryForm');
+    const scannedCodeContainer = document.getElementById('scannedCodeContainer');
+    const scannedCodeValue = document.getElementById('scannedCodeValue');
+    const copyCodeButton = document.getElementById('copyCodeButton');
+    
+    // Scanner setup
+    let html5QrCode = null;
+    let scanning = false;
+    
+    // Get CSRF token for AJAX requests
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Initialize the scanner
+    function initScanner() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+    
+    // Start the scanner
+    function startScanner() {
+        if (scanning) return;
+        
+        loadingElement.classList.remove('d-none');
+        
+        // Hide scanned code display when starting a new scan
+        scannedCodeContainer.classList.add('d-none');
+        
+        // Simple scanner config that worked in your previous implementation
+        const config = { fps: 10 };
+        
+        html5QrCode.start(
+            { facingMode: "environment" }, // Use environment facing camera (back camera)
+            config,
+            onScanSuccess,
+            onScanFailure
+        ).then(() => {
+            // Scanner started successfully
+            loadingElement.classList.add('d-none');
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            scanning = true;
+        }).catch(err => {
+            console.error("Error starting scanner:", err);
+            loadingElement.innerHTML = `
+                <div class="alert alert-danger">
+                    <p><strong>Scanner Error</strong></p>
+                    <p>${err.message || 'Could not start scanner'}</p>
+                    <button class="btn btn-primary mt-2" id="retryButton">Retry</button>
+                </div>
+            `;
+            
+            // Add retry button handler
+            document.getElementById('retryButton').addEventListener('click', startScanner);
+        });
+    }
+    
+    // Stop the scanner
+    function stopScanner() {
+        if (!scanning) return;
+        
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                scanning = false;
+            }).catch(err => {
+                console.error("Error stopping scanner:", err);
+            });
+        }
+    }
+    
+    // Handle successful scan
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log("Code detected:", decodedText);
+        
+        // Display the scanned code
+        scannedCodeValue.textContent = decodedText;
+        scannedCodeContainer.classList.remove('d-none');
+        
+        // Stop scanner to prevent multiple scans
+        stopScanner();
+        
+        // Process the scanned code
+        processScannedCode(decodedText);
+    }
+    
+    // Handle scan failures (silently)
+    function onScanFailure(error) {
+        // Don't log every frame failure
+        // console.error("Scan failure:", error);
+    }
+    
+    // Process the scanned code by sending to server
+    function processScannedCode(code) {
+        loadingElement.classList.remove('d-none');
+        loadingElement.innerHTML = `
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Processing code...</p>
+        `;
+        
+        // Send to server for processing
+        fetch('/scan/process/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: `code=${encodeURIComponent(code)}&scan_type=auto`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success modal
+                const resultModal = new bootstrap.Modal(document.getElementById('scanResultModal'));
+                document.getElementById('scanResultTitle').textContent = `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Detected`;
+                document.getElementById('scanResultBody').innerHTML = `
+                    <div class="text-center mb-3">
+                        <span class="badge ${data.type === 'job' ? 'bg-primary' : data.type === 'material' ? 'bg-success' : 'bg-warning text-dark'} fs-6 mb-2">${data.type.charAt(0).toUpperCase() + data.type.slice(1)}</span>
+                        <h4>${data.name}</h4>
+                        <p class="text-muted">${data.id}</p>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Loading details...</span>
+                    </div>
+                `;
+                document.getElementById('scanResultAction').href = data.redirect_url;
+                document.getElementById('scanResultAction').textContent = `View ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Details`;
+                resultModal.show();
+                
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1500);
+            } else {
+                // Show error with the scanned code value
+                loadingElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p><strong>Scan Error</strong></p>
+                        <p>${data.error || 'Failed to process scan'}</p>
+                        <p>Scanned code: <code>${code}</code></p>
+                        <button class="btn btn-primary mt-2" id="tryScanAgainButton">Try Again</button>
+                        <button class="btn btn-outline-secondary mt-2" id="showManualEntryButton">Enter Manually</button>
+                    </div>
+                `;
+                
+                // Add button handlers
+                document.getElementById('tryScanAgainButton').addEventListener('click', startScanner);
+                document.getElementById('showManualEntryButton').addEventListener('click', () => {
+                    manualEntryForm.classList.remove('d-none');
+                    const manualInput = document.getElementById('item_id');
+                    manualInput.value = code; // Pre-fill with scanned code
+                    manualInput.focus();
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error processing scan:", error);
+            loadingElement.innerHTML = `
+                <div class="alert alert-danger">
+                    <p><strong>Error</strong></p>
+                    <p>An error occurred while processing the scan.</p>
+                    <p>Scanned code: <code>${code}</code></p>
+                    <button class="btn btn-primary mt-2" id="tryScanAgainButton">Try Again</button>
+                </div>
+            `;
+            
+            // Add retry button handler
+            document.getElementById('tryScanAgainButton').addEventListener('click', startScanner);
+        });
+    }
+    
+    // Copy scanned code to clipboard
+    copyCodeButton.addEventListener('click', function() {
+        const codeToCopy = scannedCodeValue.textContent;
+        navigator.clipboard.writeText(codeToCopy).then(() => {
+            // Show temporary success message
+            const originalText = copyCodeButton.innerHTML;
+            copyCodeButton.innerHTML = '<i class="bi bi-check"></i>';
+            copyCodeButton.classList.add('btn-success');
+            copyCodeButton.classList.remove('btn-outline-primary');
+            
+            setTimeout(() => {
+                copyCodeButton.innerHTML = originalText;
+                copyCodeButton.classList.remove('btn-success');
+                copyCodeButton.classList.add('btn-outline-primary');
+            }, 1500);
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+            alert('Failed to copy to clipboard');
+        });
+    });
+    
+    // Initialize
+    initScanner();
+    
+    // Add event listeners
+    startButton.addEventListener('click', startScanner);
+    stopButton.addEventListener('click', stopScanner);
+    
+    manualEntryLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        manualEntryForm.classList.toggle('d-none');
+        if (!manualEntryForm.classList.contains('d-none')) {
+            document.getElementById('item_id').focus();
+        }
+    });
+});
+</script>
+{% endblock %}
