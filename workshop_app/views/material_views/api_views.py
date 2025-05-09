@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from workshop_app.models import StaffSettings
+from workshop_app.models.job_time_tracking import JobTimeTracking
 
 
 @login_required
@@ -16,19 +17,27 @@ def get_active_job(request):
         settings = StaffSettings.objects.get(user=request.user)
         active_job = settings.active_job
         
+        # Get active time tracking info if available
+        active_time_tracking = JobTimeTracking.get_active_entry(request.user)
+        is_tracking = active_time_tracking is not None and active_time_tracking.job == active_job
+        
         if active_job:
             return JsonResponse({
                 'has_active_job': True,
                 'job_id': active_job.job_id,
-                'job_name': active_job.project_name
+                'job_name': active_job.project_name,
+                'is_tracking': is_tracking,
+                'tracking_elapsed': active_time_tracking.elapsed_time if is_tracking else None
             })
         else:
             return JsonResponse({
-                'has_active_job': False
+                'has_active_job': False,
+                'is_tracking': False
             })
     except StaffSettings.DoesNotExist:
         return JsonResponse({
-            'has_active_job': False
+            'has_active_job': False,
+            'is_tracking': False
         })
 
 
@@ -38,6 +47,13 @@ def clear_active_job(request):
     """API endpoint to clear the user's active job and set personal job as active"""
     try:
         settings = StaffSettings.objects.get(user=request.user)
+        
+        # Stop any active time tracking for the current job
+        active_time_tracking = JobTimeTracking.get_active_entry(request.user)
+        if active_time_tracking:
+            active_time_tracking.end_time = timezone.now()
+            active_time_tracking.notes += "\nAuto-stopped when clearing active job."
+            active_time_tracking.save()
         
         # If personal job exists, set it as active
         if settings.personal_job:
@@ -83,22 +99,82 @@ def start_timer(request):
                 'error': 'No active job found'
             })
         
-        # Here you would implement actual time tracking logic
-        # This is a placeholder implementation
+        # Check if already tracking
+        active_tracking = JobTimeTracking.get_active_entry(request.user)
+        if active_tracking and active_tracking.job == active_job:
+            return JsonResponse({
+                'success': True,
+                'message': 'Already tracking time for this job',
+                'tracking_id': active_tracking.id,
+                'job_name': active_job.project_name,
+                'start_time': active_tracking.start_time.isoformat(),
+                'elapsed_time': active_tracking.elapsed_time
+            })
         
-        # Update the job
-        active_job.start_date = active_job.start_date or timezone.now().date()
-        active_job.save()
+        # Start new time tracking
+        notes = request.POST.get('notes', '')
+        time_entry = JobTimeTracking.start_tracking(
+            job=active_job,
+            user=request.user,
+            notes=notes
+        )
+        
+        # Update the job's start date if not set
+        if not active_job.start_date:
+            active_job.start_date = timezone.now().date()
+            active_job.save()
         
         return JsonResponse({
             'success': True,
+            'message': f'Timer started for job: {active_job.project_name}',
+            'tracking_id': time_entry.id,
             'job_name': active_job.project_name,
-            'message': f'Timer started for job: {active_job.project_name}'
+            'start_time': time_entry.start_time.isoformat(),
+            'elapsed_time': '0m 0s'
         })
     except StaffSettings.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': 'No active job found'
+            'error': 'No staff settings found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@login_required
+@require_POST
+def stop_timer(request):
+    """API endpoint to stop time tracking for the current job"""
+    try:
+        # Get active time tracking
+        active_tracking = JobTimeTracking.get_active_entry(request.user)
+        
+        if not active_tracking:
+            return JsonResponse({
+                'success': False,
+                'error': 'No active time tracking found'
+            })
+        
+        # Stop time tracking
+        notes = request.POST.get('notes', '')
+        active_tracking = JobTimeTracking.stop_tracking(request.user, notes)
+        
+        # Calculate duration
+        duration = active_tracking.duration
+        hours = duration.total_seconds() / 3600
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Timer stopped for job: {active_tracking.job.project_name}',
+            'tracking_id': active_tracking.id,
+            'job_name': active_tracking.job.project_name,
+            'start_time': active_tracking.start_time.isoformat(),
+            'end_time': active_tracking.end_time.isoformat(),
+            'duration': active_tracking.elapsed_time,
+            'hours_worked': round(hours, 2)
         })
     except Exception as e:
         return JsonResponse({

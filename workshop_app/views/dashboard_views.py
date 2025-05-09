@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from workshop_app.models import Job, Machine, Material, StaffSettings, JobStatus
+from workshop_app.models.job_time_tracking import JobTimeTracking
 
 @login_required
 def dashboard(request):
@@ -16,6 +17,11 @@ def dashboard(request):
         staff_settings = StaffSettings.objects.get(user=request.user)
         active_job = staff_settings.active_job
         personal_job = staff_settings.personal_job
+        
+        # Get active time tracking if any
+        active_time_tracking = None
+        if active_job:
+            active_time_tracking = JobTimeTracking.get_active_entry(request.user)
         
         # If no personal job exists, create one now
         if not personal_job:
@@ -46,6 +52,7 @@ def dashboard(request):
     except StaffSettings.DoesNotExist:
         active_job = None
         personal_job = None
+        active_time_tracking = None
         
         # Create staff settings
         StaffSettings.objects.create(user=request.user)
@@ -79,6 +86,7 @@ def dashboard(request):
         'recent_jobs': recent_jobs,
         'available_machines': available_machines,
         'low_stock_materials': low_stock_materials,
+        'active_time_tracking': active_time_tracking,
     }
     
     return render(request, 'dashboard/index.html', context)

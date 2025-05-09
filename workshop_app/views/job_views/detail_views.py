@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 
 from workshop_app.models import Job, JobMaterial, Machine, StaffSettings
+from workshop_app.models.job_time_tracking import JobTimeTracking
 from workshop_app.utils.barcode_utils import generate_qr_code
 
 @login_required
@@ -19,6 +20,13 @@ def job_detail(request, job_id):
     # Get machines currently in use for this job
     current_machines = Machine.objects.filter(current_job=job)
     
+    # Get time logs for this job
+    time_logs = JobTimeTracking.objects.filter(job=job).order_by('-start_time')
+    
+    # Calculate total time spent on this job
+    total_seconds = sum(log.duration.total_seconds() for log in time_logs)
+    total_hours = total_seconds / 3600
+    
     # Check if this is the active job for the current user
     try:
         staff_settings = StaffSettings.objects.get(user=request.user)
@@ -31,6 +39,8 @@ def job_detail(request, job_id):
         'materials': materials,
         'current_machines': current_machines,
         'is_active_job': is_active_job,
+        'time_logs': time_logs,
+        'total_hours': round(total_hours, 2),
     }
     
     return render(request, 'jobs/detail.html', context)
