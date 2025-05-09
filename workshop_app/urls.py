@@ -15,10 +15,13 @@ from workshop_app.views.machine_views import (
 from workshop_app.views.job_views import (
     job_list,
     job_detail,
+    job_detail_by_pk,
     add_job,
     edit_job,
+    edit_job_by_pk,
     get_client_contacts,
-    get_job_qr_code
+    get_job_qr_code,
+    activate_job_by_pk
 )
 from workshop_app.views.material_views.api_views import edit_time_tracking_notes
 
@@ -73,6 +76,9 @@ urlpatterns = [
     path('jobs/<str:job_id>/', job_detail, name='job_detail'),
     path('jobs/<str:job_id>/edit/', edit_job, name='edit_job'),
     path('jobs/<str:job_id>/qr-code/', get_job_qr_code, name='job_qr_code'),
+    path('jobs/by-db-id/<int:pk>/', job_detail_by_pk, name='job_detail_by_pk'),
+    path('jobs/by-db-id/<int:pk>/edit/', edit_job_by_pk, name='edit_job_by_pk'),
+    path('jobs/by-db-id/<int:pk>/activate/', activate_job_by_pk, name='activate_job_by_pk'),
     
     # API endpoints
     path('api/active-job/', material_views.get_active_job, name='api_active_job'),

@@ -227,21 +227,40 @@
                 <div class="card-footer">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <form method="post" action="{% url 'activate_job_by_id' %}" class="d-inline">
-                                {% csrf_token %}
-                                <input type="hidden" name="job_id" value="{{ job.job_id }}">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-check-circle"></i> Set as Active Job
-                                </button>
-                            </form>
+                            {% if job.job_id %}
+                                <form method="post" action="{% url 'activate_job_by_id' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="job_id" value="{{ job.job_id }}">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Set as Active Job
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'activate_job_by_pk' job.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Set as Active Job
+                                    </button>
+                                </form>
+                            {% endif %}
                         </div>
                         <div>
-                            <a href="{% url 'edit_job' job.job_id %}" class="btn btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
-                            <a href="#" class="btn btn-outline-info" id="qrCodeButton">
-                                <i class="bi bi-qr-code"></i> QR Code
-                            </a>
+                            {% if job.job_id %}
+                                <a href="{% url 'edit_job' job.job_id %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <a href="#" class="btn btn-outline-info" id="qrCodeButton">
+                                    <i class="bi bi-qr-code"></i> QR Code
+                                </a>
+                            {% else %}
+                                <a href="{% url 'edit_job_by_pk' job.id %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <!-- QR code doesn't work without job_id -->
+                                <button class="btn btn-outline-info" disabled>
+                                    <i class="bi bi-qr-code"></i> QR Code
+                                </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

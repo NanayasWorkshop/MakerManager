@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from workshop_app.models import Job, JobStatus, Client, ContactPerson, StaffSettings
 from workshop_app.forms import JobForm
@@ -180,3 +181,98 @@ def edit_job(request, job_id):
     }
     
     return render(request, 'jobs/edit.html', context)
+
+@login_required
+def edit_job_by_pk(request, pk):
+    """Show form and handle editing a job using primary key"""
+    job = get_object_or_404(Job, pk=pk)
+    
+    # Get job statuses for dropdowns
+    job_statuses = JobStatus.objects.all().order_by('order')
+    
+    # Get clients for dropdowns
+    clients = Client.objects.filter(status='active').order_by('name')
+    
+    # Get contact persons for the selected client
+    contact_persons = []
+    if job.client:
+        contact_persons = ContactPerson.objects.filter(client=job.client)
+    
+    if request.method == 'POST':
+        # Process form submission
+        form = JobForm(request.POST, instance=job)
+        if form.is_valid():
+            # Get the old project type for comparison
+            old_project_type = job.project_type
+            
+            # Update job
+            job = form.save(commit=False)
+            
+            # Directly query for status to get its name
+            status_id = request.POST.get('status')
+            if status_id:
+                try:
+                    status_obj = JobStatus.objects.get(id=status_id)
+                    job.status_text = status_obj.name
+                except JobStatus.DoesNotExist:
+                    job.status_text = "Unknown"
+            
+            # Save the job
+            job = form.save()
+            
+            # Update personal job reference if needed
+            if job.project_type == 'PER' and old_project_type != 'PER':
+                staff_settings, created = StaffSettings.objects.get_or_create(user=request.user)
+                staff_settings.personal_job = job
+                staff_settings.save()
+            elif job.project_type != 'PER' and old_project_type == 'PER':
+                # If it's no longer a personal job, remove it as the user's personal job
+                staff_settings = StaffSettings.objects.filter(user=request.user, personal_job=job).first()
+                if staff_settings:
+                    staff_settings.personal_job = None
+                    staff_settings.save()
+            
+            messages.success(request, f'Job "{job.project_name}" has been updated')
+            
+            # Redirect to the appropriate detail view based on whether job has an ID
+            if job.job_id:
+                return redirect('job_detail', job_id=job.job_id)
+            else:
+                return redirect('job_detail_by_pk', pk=job.pk)
+        else:
+            messages.error(request, 'Please correct the errors below')
+            # Print form errors for debugging
+            print(f"Form errors: {form.errors}")
+    else:
+        form = JobForm(instance=job)
+    
+    context = {
+        'job': job,
+        'form': form,
+        'job_statuses': job_statuses,
+        'clients': clients,
+        'contact_persons': contact_persons,
+        'is_edit_by_pk': True,  # Add flag to indicate this is editing by PK
+    }
+    
+    return render(request, 'jobs/edit.html', context)
+
+@login_required
+@require_POST
+def activate_job_by_pk(request, pk):
+    """Handle activation of a job by its primary key (database ID)"""
+    try:
+        # Find the job
+        job = get_object_or_404(Job, pk=pk)
+        
+        # Set the job as active
+        staff_settings, created = StaffSettings.objects.get_or_create(user=request.user)
+        staff_settings.set_active_job(job)
+        
+        messages.success(request, f'Job "{job.project_name}" has been set as your active job.')
+    except Job.DoesNotExist:
+        messages.error(request, f'No job found with ID {pk}')
+    except Exception as e:
+        messages.error(request, f'Error activating job: {str(e)}')
+    
+    return redirect('dashboard')
