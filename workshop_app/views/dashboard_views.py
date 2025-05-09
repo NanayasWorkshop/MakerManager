@@ -3,9 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-
-from workshop_app.models import Job, Machine, Material, StaffSettings
 from django.db.models import Q
+
+from workshop_app.models import Job, Machine, Material, StaffSettings, JobStatus
 
 @login_required
 def dashboard(request):
@@ -16,9 +16,41 @@ def dashboard(request):
         staff_settings = StaffSettings.objects.get(user=request.user)
         active_job = staff_settings.active_job
         personal_job = staff_settings.personal_job
+        
+        # If no personal job exists, create one now
+        if not personal_job:
+            # Get a default status
+            status = JobStatus.objects.filter(name='Personal').first()
+            if not status:
+                status = JobStatus.objects.first()
+                
+            # Create a System Personal Account
+            personal_job = Job.objects.create(
+                job_id=f"PER-{request.user.username.upper()}",
+                project_name=f"Personal Account - {request.user.get_full_name() or request.user.username}",
+                project_type='PER',  # Use personal type
+                description="System account for unassigned work and materials",
+                priority='low',
+                status=status,
+                status_text=status.name if status else "New",
+                created_by=request.user,
+                owner=request.user,
+                created_date=timezone.now(),
+                percent_complete=0
+            )
+            
+            # Update staff settings
+            staff_settings.personal_job = personal_job
+            staff_settings.save()
+            
     except StaffSettings.DoesNotExist:
         active_job = None
         personal_job = None
+        
+        # Create staff settings
+        StaffSettings.objects.create(user=request.user)
+        # Reload the page to get the new settings with personal job
+        return redirect('dashboard')
         
     # Get recent jobs for the user
     recent_jobs = Job.objects.filter(

@@ -17,7 +17,8 @@ from workshop_app.views.job_views import (
     job_detail,
     add_job,
     edit_job,
-    get_client_contacts
+    get_client_contacts,
+    get_job_qr_code
 )
 
 urlpatterns = [
@@ -70,6 +71,7 @@ urlpatterns = [
     path('jobs/add/', add_job, name='add_job'),
     path('jobs/<str:job_id>/', job_detail, name='job_detail'),
     path('jobs/<str:job_id>/edit/', edit_job, name='edit_job'),
+    path('jobs/<str:job_id>/qr-code/', get_job_qr_code, name='job_qr_code'),
     
     # API endpoints
     path('api/active-job/', material_views.get_active_job, name='api_active_job'),

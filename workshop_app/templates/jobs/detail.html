@@ -193,6 +193,9 @@
                             <a href="{% url 'edit_job' job.job_id %}" class="btn btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Edit
                             </a>
+                            <a href="#" class="btn btn-outline-info" id="qrCodeButton">
+                                <i class="bi bi-qr-code"></i> QR Code
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -254,6 +257,67 @@
 
 {% block extra_js %}
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // QR Code button handling
+        const qrCodeButton = document.getElementById('qrCodeButton');
+        if (qrCodeButton) {
+            qrCodeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                // Get job ID from URL
+                const jobId = '{{ job.job_id }}';
+                
+                // Fetch QR code using API
+                fetch(`/jobs/${jobId}/qr-code/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Create modal to display QR code
+                            const modalHtml = `
+                                <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">QR Code for ${data.job_name}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-center">
+                                                <img src="${data.qr_code_url}" alt="QR Code" class="img-fluid">
+                                                <p class="mt-2">Job ID: ${jobId}</p>
+                                                <p class="mt-2">Scan this code to quickly access this job.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <a href="${data.qr_code_url}" download="qrcode-${jobId}.png" class="btn btn-primary">Download</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Add modal to body
+                            document.body.insertAdjacentHTML('beforeend', modalHtml);
+                            
+                            // Show modal
+                            const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+                            modal.show();
+                            
+                            // Remove modal from DOM when hidden
+                            document.getElementById('qrCodeModal').addEventListener('hidden.bs.modal', function() {
+                                this.remove();
+                            });
+                        } else {
+                            alert('Error: ' + (data.error || 'Failed to get QR code'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error getting QR code:', error);
+                        alert('An error occurred while getting the QR code.');
+                    });
+            });
+        }
+    });
+
     function startTimer() {
         // Call the API to start timer
         fetch('/api/start-timer/', {

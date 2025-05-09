@@ -3,8 +3,10 @@ Views for displaying job details.
 """
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 from workshop_app.models import Job, JobMaterial, Machine, StaffSettings
+from workshop_app.utils.barcode_utils import generate_qr_code
 
 @login_required
 def job_detail(request, job_id):
@@ -32,3 +34,17 @@ def job_detail(request, job_id):
     }
     
     return render(request, 'jobs/detail.html', context)
+
+@login_required
+def get_job_qr_code(request, job_id):
+    """Generate and return QR code for a job"""
+    job = get_object_or_404(Job, job_id=job_id)
+    
+    # Generate QR code
+    qr_code_url = generate_qr_code(job.job_id)
+    
+    return JsonResponse({
+        'success': True,
+        'job_name': job.project_name,
+        'qr_code_url': qr_code_url
+    })
