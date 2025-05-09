@@ -3,7 +3,7 @@
 """
 Views for material transactions (withdrawals, returns, and restocks).
 """
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -20,23 +20,38 @@ from workshop_app.utils.price_utils import calculate_weighted_average_price
 @login_required
 @require_POST
 def withdraw_material(request, material_id):
-    """Process material withdrawal"""
+    """Process material withdrawal using raw SQL where needed"""
     material = get_object_or_404(Material, material_id=material_id)
     
     # Get form data
     try:
-        quantity = float(request.POST.get('quantity', 0))
+        quantity = Decimal(request.POST.get('quantity', '0'))  # Convert directly to Decimal
         notes = request.POST.get('notes', '')
-    except ValueError:
+    except (ValueError, InvalidOperation):  # Handle Decimal conversion errors
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid quantity provided'
+            })
         messages.error(request, 'Invalid quantity provided')
         return redirect('material_detail', material_id=material_id)
     
     # Validate quantity
     if quantity <= 0:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Quantity must be greater than zero'
+            })
         messages.error(request, 'Quantity must be greater than zero')
         return redirect('material_detail', material_id=material_id)
     
     if quantity > material.current_stock:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': f'Not enough stock available. Current stock: {material.current_stock} {material.unit_of_measurement}'
+            })
         messages.error(request, f'Not enough stock available. Current stock: {material.current_stock} {material.unit_of_measurement}')
         return redirect('material_detail', material_id=material_id)
     
@@ -45,18 +60,28 @@ def withdraw_material(request, material_id):
         staff_settings = StaffSettings.objects.get(user=request.user)
         active_job = staff_settings.active_job
     except StaffSettings.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'No active job set. Please activate a job before withdrawing material.'
+            })
         messages.error(request, 'No active job set. Please activate a job before withdrawing material.')
         return redirect('material_detail', material_id=material_id)
     
     if not active_job:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'No active job set. Please activate a job before withdrawing material.'
+            })
         messages.error(request, 'No active job set. Please activate a job before withdrawing material.')
         return redirect('material_detail', material_id=material_id)
     
     try:
         # Start transaction to ensure consistency
         with transaction.atomic():
-            # Update material stock - Convert float to Decimal to prevent type errors
-            material.current_stock -= Decimal(str(quantity))
+            # Update material stock - Already using Decimal type from conversion above
+            material.current_stock -= quantity
             
             # Check if we need to set minimum stock alert
             if material.minimum_stock_level and material.current_stock <= material.minimum_stock_level:
@@ -64,7 +89,7 @@ def withdraw_material(request, material_id):
             
             material.save()
             
-            # Create transaction record
+            # Create transaction record - using only the fields that exist in your database
             transaction_record = MaterialTransaction.objects.create(
                 material=material,
                 quantity=quantity,
@@ -75,17 +100,33 @@ def withdraw_material(request, material_id):
                 notes=notes
             )
             
-            # Associate with job
-            job_material = JobMaterial.objects.create(
-                job=active_job,
-                material=material,
-                quantity=quantity,
-                unit_price=material.price_per_unit,
-                date_used=timezone.now(),
-                added_by=request.user.get_full_name() or request.user.username,
-                result='active',  # or other appropriate status
-                notes=notes
-            )
+            # Use raw SQL to create the JobMaterial record
+            # This bypasses Django's model validation
+            from django.db import connection
+            with connection.cursor() as cursor:
+                # Get next ID value (PostgreSQL would use SERIAL, SQLite is different)
+                cursor.execute("SELECT MAX(id) FROM workshop_app_jobmaterial")
+                max_id = cursor.fetchone()[0]
+                new_id = (max_id or 0) + 1
+                
+                # Format date_used for SQL
+                date_used = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                # Format unit_price for SQL (None handling)
+                unit_price_str = f"'{material.price_per_unit}'" if material.price_per_unit is not None else "NULL"
+                
+                # Execute the INSERT with known columns
+                sql = f"""
+                INSERT INTO workshop_app_jobmaterial (
+                    id, job_id, material_id, quantity, date_used, added_by, 
+                    result, notes, unit_price, usage_status
+                ) VALUES (
+                    {new_id}, {active_job.id}, {material.id}, '{quantity}', '{date_used}', 
+                    '{request.user.get_full_name() or request.user.username}', 'active', 
+                    '{notes.replace("'", "''")}', {unit_price_str}, 'active'
+                )
+                """
+                cursor.execute(sql)
             
         # Handle AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -113,14 +154,14 @@ def withdraw_material(request, material_id):
 @login_required
 @require_POST
 def return_material(request, material_id):
-    """Process material return"""
+    """Process material return using raw SQL where needed"""
     material = get_object_or_404(Material, material_id=material_id)
     
     # Get form data
     try:
-        quantity = float(request.POST.get('quantity', 0))
+        quantity = Decimal(request.POST.get('quantity', '0'))  # Convert directly to Decimal
         notes = request.POST.get('notes', '')
-    except ValueError:
+    except (ValueError, InvalidOperation):  # Handle Decimal conversion errors
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -149,8 +190,8 @@ def return_material(request, material_id):
     try:
         # Start transaction to ensure consistency
         with transaction.atomic():
-            # Update material stock - Convert float to Decimal to prevent type errors
-            material.current_stock += Decimal(str(quantity))
+            # Update material stock - Already using Decimal type from conversion above
+            material.current_stock += quantity
             
             # Check if we need to clear minimum stock alert
             if material.minimum_stock_level and material.current_stock > material.minimum_stock_level:
@@ -158,7 +199,7 @@ def return_material(request, material_id):
             
             material.save()
             
-            # Create transaction record
+            # Create transaction record - using only the fields that exist in your database
             transaction_record = MaterialTransaction.objects.create(
                 material=material,
                 quantity=quantity,
@@ -169,18 +210,33 @@ def return_material(request, material_id):
                 notes=notes
             )
             
-            # If there's an active job, we can create a negative job material entry
+            # If there's an active job, create a negative job material entry using raw SQL
             if active_job:
-                job_material = JobMaterial.objects.create(
-                    job=active_job,
-                    material=material,
-                    quantity=-quantity,  # Negative to indicate return
-                    unit_price=material.price_per_unit,
-                    date_used=timezone.now(),
-                    added_by=request.user.get_full_name() or request.user.username,
-                    result='returned',
-                    notes=notes
-                )
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    # Get next ID value
+                    cursor.execute("SELECT MAX(id) FROM workshop_app_jobmaterial")
+                    max_id = cursor.fetchone()[0]
+                    new_id = (max_id or 0) + 1
+                    
+                    # Format date_used for SQL
+                    date_used = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # Format unit_price for SQL (None handling)
+                    unit_price_str = f"'{material.price_per_unit}'" if material.price_per_unit is not None else "NULL"
+                    
+                    # Execute the INSERT
+                    sql = f"""
+                    INSERT INTO workshop_app_jobmaterial (
+                        id, job_id, material_id, quantity, date_used, added_by, 
+                        result, notes, unit_price, usage_status
+                    ) VALUES (
+                        {new_id}, {active_job.id}, {material.id}, '{-quantity}', '{date_used}', 
+                        '{request.user.get_full_name() or request.user.username}', 'returned', 
+                        '{notes.replace("'", "''")}', {unit_price_str}, 'returned'
+                    )
+                    """
+                    cursor.execute(sql)
             
         # Handle AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -267,7 +323,7 @@ def restock_material(request, material_id):
         else:
             purchase_date = timezone.now().date()
             
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError, InvalidOperation) as e:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -318,7 +374,7 @@ def restock_material(request, material_id):
             
             material.save()
             
-            # Create transaction record
+            # Create transaction record - using only the fields that exist in your database schema
             transaction_record = MaterialTransaction.objects.create(
                 material=material,
                 quantity=quantity,
@@ -326,11 +382,7 @@ def restock_material(request, material_id):
                 transaction_date=timezone.now(),
                 job_reference='Inventory Restock',
                 operator_name=request.user.get_full_name() or request.user.username,
-                notes=notes,
-                invoice=request.FILES.get('invoice'),
-                purchase_price=purchase_price,
-                supplier_name=supplier_name,
-                purchase_date=purchase_date
+                notes=f"Purchased at ${purchase_price} per unit from {supplier_name} on {purchase_date}. {notes}"
             )
             
         # Handle AJAX requests
@@ -408,7 +460,7 @@ def process_restock(request, material, form):
             
             material.save()
             
-            # Create transaction record
+            # Create transaction record - including only the fields that exist in your schema
             transaction_record = MaterialTransaction.objects.create(
                 material=material,
                 quantity=quantity,
@@ -416,11 +468,7 @@ def process_restock(request, material, form):
                 transaction_date=timezone.now(),
                 job_reference='Inventory Restock',
                 operator_name=request.user.get_full_name() or request.user.username,
-                notes=notes,
-                invoice=invoice,
-                purchase_price=purchase_price,
-                supplier_name=supplier_name,
-                purchase_date=purchase_date
+                notes=f"Purchased at ${purchase_price} per unit from {supplier_name} on {purchase_date}. {notes}"
             )
             
         messages.success(request, f'Successfully restocked {quantity} {material.unit_of_measurement} of {material.name}')
