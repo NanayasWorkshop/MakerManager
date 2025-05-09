@@ -30,46 +30,67 @@ def add_job(request):
             if job.percent_complete is None:
                 job.percent_complete = 0
             
-            # Generate a unique job ID
-            # Format: J-XXXXX where XXXXX is a 5-digit number
-            # Find the highest job ID number and increment by 1
-            last_job = Job.objects.order_by('-job_id').first()
-            if last_job:
-                # Extract number from job_id (format: J-XXXXX)
-                match = re.search(r'J-(\d+)', last_job.job_id)
-                if match:
-                    last_number = int(match.group(1))
-                    new_number = last_number + 1
-                else:
-                    new_number = 1
-            else:
-                new_number = 1
+            # Get the project type from the form
+            project_type = request.POST.get('project_type', 'JOB')
             
-            # Create new job ID with 5 digits
-            job.job_id = f"J-{new_number:05d}"
+            # Get the current year's last two digits
+            current_year = timezone.now().year % 100
+            
+            # Find the highest job number for this project type and year
+            # Format: J-XXX-YYYYRR where XXX is the project type, YYYY is a sequence number, and RR is the year
+            # We need to find the max YYYY for the current type and year
+            prefix = f"J-{project_type}-"
+            suffix = f"{current_year}"
+            
+            # Find the highest job ID matching our pattern
+            last_job_id = Job.objects.filter(
+                job_id__startswith=prefix,
+                job_id__endswith=suffix
+            ).order_by('-job_id').first()
+            
+            if last_job_id:
+                # Extract the sequence number from the last job ID
+                try:
+                    # Format: J-XXX-YYYYRR, we want to extract YYYY
+                    sequence_str = last_job_id.job_id.split('-')[2][:-2]
+                    sequence_num = int(sequence_str)
+                    new_sequence = sequence_num + 1
+                except (IndexError, ValueError):
+                    # If parsing fails, start from 1
+                    new_sequence = 1
+            else:
+                # No existing jobs of this type, start from 1
+                new_sequence = 1
+            
+            # Format the new job ID
+            # Sequence number padded to 4 digits
+            job.job_id = f"{prefix}{new_sequence:04d}{suffix}"
             
             # Set creator to current user
             job.created_by = request.user
             
-            # Set is_general and is_personal flags
-            job.is_general = 'is_general' in request.POST
-            job.is_personal = 'is_personal' in request.POST
+            # Set project type
+            job.project_type = project_type
             
             # Set owner to current user
             job.owner = request.user
             
             # Set status_text from the selected status
-            if job.status:
-                job.status_text = job.status.name
+            status_id = request.POST.get('status')
+            if status_id:
+                try:
+                    status_obj = JobStatus.objects.get(id=status_id)
+                    job.status_text = status_obj.name
+                except JobStatus.DoesNotExist:
+                    job.status_text = "New"
             else:
-                # Provide a default status text if needed
                 job.status_text = "New"
             
             # Save the job
             job.save()
             
-            # If job is personal, set it as the user's personal job
-            if job.is_personal:
+            # If job is personal type, set it as the user's personal job
+            if job.project_type == 'PER':
                 staff_settings, created = StaffSettings.objects.get_or_create(user=request.user)
                 staff_settings.personal_job = job
                 staff_settings.save()
@@ -111,22 +132,35 @@ def edit_job(request, job_id):
         # Process form submission
         form = JobForm(request.POST, instance=job)
         if form.is_valid():
-            # Set is_general and is_personal flags
-            job.is_general = 'is_general' in request.POST
-            job.is_personal = 'is_personal' in request.POST
+            # Get the old project type for comparison
+            old_project_type = job.project_type
             
-            # Make sure status_text is updated when status changes
-            if job.status:
-                job.status_text = job.status.name
+            # Update job
+            job = form.save(commit=False)
+            
+            # Directly query for status to get its name
+            status_id = request.POST.get('status')
+            if status_id:
+                try:
+                    status_obj = JobStatus.objects.get(id=status_id)
+                    job.status_text = status_obj.name
+                except JobStatus.DoesNotExist:
+                    job.status_text = "Unknown"
             
             # Save the job
             job = form.save()
             
-            # If job is personal, set it as the user's personal job
-            if job.is_personal:
+            # Update personal job reference if needed
+            if job.project_type == 'PER' and old_project_type != 'PER':
                 staff_settings, created = StaffSettings.objects.get_or_create(user=request.user)
                 staff_settings.personal_job = job
                 staff_settings.save()
+            elif job.project_type != 'PER' and old_project_type == 'PER':
+                # If it's no longer a personal job, remove it as the user's personal job
+                staff_settings = StaffSettings.objects.filter(user=request.user, personal_job=job).first()
+                if staff_settings:
+                    staff_settings.personal_job = None
+                    staff_settings.save()
             
             messages.success(request, f'Job "{job.project_name}" has been updated')
             return redirect('job_detail', job_id=job.job_id)

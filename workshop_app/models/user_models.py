@@ -34,9 +34,10 @@ class StaffSettings(models.Model):
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # Using string references to avoid circular import
-    active_job = models.ForeignKey('workshop_app.Job', on_delete=models.SET_NULL, null=True, blank=True, related_name='active_users')
-    personal_job = models.ForeignKey('workshop_app.Job', on_delete=models.SET_NULL, null=True, blank=True, related_name='personal_users')
+    # Changed from SET_NULL to CASCADE
+    active_job = models.ForeignKey('workshop_app.Job', on_delete=models.CASCADE, null=True, blank=True, related_name='active_users')
+    # Changed from SET_NULL to CASCADE
+    personal_job = models.ForeignKey('workshop_app.Job', on_delete=models.CASCADE, null=True, blank=True, related_name='personal_users')
     active_since = models.DateTimeField(null=True, blank=True)
     show_active_job_banner = models.BooleanField(default=True)
     default_scan_for = models.CharField(max_length=10, choices=DEFAULT_SCAN_CHOICES, default='job')

@@ -41,8 +41,8 @@ class Machine(models.Model):
     reserved_until = models.DateTimeField(null=True, blank=True)
     qr_code = models.CharField(max_length=100)
     notes = models.TextField()
-    # This will be set after Job model is defined using string reference
-    current_job = models.ForeignKey('workshop_app.Job', on_delete=models.SET_NULL, null=True, blank=True, related_name='current_machines')
+    # Changed from SET_NULL to CASCADE
+    current_job = models.ForeignKey('workshop_app.Job', on_delete=models.CASCADE, null=True, blank=True, related_name='current_machines')
     
     def __str__(self):
         return f"{self.machine_id} - {self.name}"

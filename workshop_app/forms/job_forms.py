@@ -51,12 +51,13 @@ class JobForm(forms.ModelForm):
     class Meta:
         model = Job
         fields = [
-            'project_name', 'client', 'contact_person', 'status',
+            'project_name', 'project_type', 'client', 'contact_person', 'status',
             'priority', 'description', 'start_date', 'expected_completion',
             'deadline', 'percent_complete'
         ]
         widgets = {
             'project_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'project_type': forms.Select(attrs={'class': 'form-select'}),
             'client': forms.Select(attrs={'class': 'form-select'}),
             'contact_person': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),

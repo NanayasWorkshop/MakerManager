@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -25,8 +24,16 @@ class Job(models.Model):
         ('urgent', 'Urgent'),
     ]
     
+    # Project type as a choice field instead of boolean flags
+    PROJECT_TYPE_CHOICES = [
+        ('GEN', 'General'),
+        ('PER', 'Personal'),
+        ('JOB', 'Job'),
+    ]
+    
     job_id = models.CharField(max_length=15, unique=True)
     project_name = models.CharField(max_length=100)
+    project_type = models.CharField(max_length=3, choices=PROJECT_TYPE_CHOICES, default='JOB')
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True)
     contact_person = models.ForeignKey(ContactPerson, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_jobs')
@@ -35,17 +42,25 @@ class Job(models.Model):
     description = models.TextField()
     end_date = models.DateField(null=True, blank=True)
     expected_completion = models.DateField(null=True, blank=True)
-    is_general = models.BooleanField(default=False)
-    is_personal = models.BooleanField(default=False)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='owned_jobs')
     percent_complete = models.IntegerField(default=0)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
     qr_code = models.CharField(max_length=100)
     start_date = models.DateField(null=True, blank=True)
     status = models.ForeignKey(JobStatus, on_delete=models.CASCADE)
+    status_text = models.CharField(max_length=50, default="New")
     
     def __str__(self):
         return f"{self.job_id} - {self.project_name}"
+    
+    # Add these properties to maintain compatibility with existing code
+    @property
+    def is_general(self):
+        return self.project_type == 'GEN'
+    
+    @property
+    def is_personal(self):
+        return self.project_type == 'PER'
     
     def is_overdue(self):
         if self.deadline:
