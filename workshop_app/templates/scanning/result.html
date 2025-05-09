@@ -134,12 +134,12 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="withdrawQuantity" class="form-label">Quantity to Withdraw ({{ material.unit_of_measurement }})</label>
-                            <input type="number" class="form-control" id="withdrawQuantity" min="0.01" max="{{ material.current_stock }}" step="0.01" required>
+                            <input type="number" class="form-control" id="withdrawQuantity" name="quantity" min="0.01" max="{{ material.current_stock }}" step="0.01" required>
                             <div class="form-text">Available: {{ material.current_stock }} {{ material.unit_of_measurement }}</div>
                         </div>
                         <div class="mb-3">
                             <label for="withdrawNotes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="withdrawNotes" rows="2"></textarea>
+                            <textarea class="form-control" id="withdrawNotes" name="notes" rows="2"></textarea>
                         </div>
                     </form>
                 </div>
@@ -164,11 +164,11 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="returnQuantity" class="form-label">Quantity to Return ({{ material.unit_of_measurement }})</label>
-                            <input type="number" class="form-control" id="returnQuantity" min="0.01" step="0.01" required>
+                            <input type="number" class="form-control" id="returnQuantity" name="quantity" min="0.01" step="0.01" required>
                         </div>
                         <div class="mb-3">
                             <label for="returnNotes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="returnNotes" rows="2"></textarea>
+                            <textarea class="form-control" id="returnNotes" name="notes" rows="2"></textarea>
                         </div>
                     </form>
                 </div>
@@ -373,8 +373,11 @@
 </div>
 {% endblock %}
 
-{% if machine %}
 {% block extra_js %}
+{% if machine %}
 <script src="{% static 'js/machine_detail.js' %}"></script>
-{% endblock %}
 {% endif %}
+{% if material %}
+<script src="{% static 'js/scanning_result.js' %}"></script>
+{% endif %}
+{% endblock %}

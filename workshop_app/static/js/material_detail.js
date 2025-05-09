@@ -61,11 +61,46 @@ function setupWithdrawForm() {
             return;
         }
         
-        // Submit form via AJAX using utility
+        // Create FormData object
         const formData = new FormData(withdrawForm);
         
-        WMSAPI.apiRequest(withdrawForm.action, 'POST', formData)
+        try {
+            // Show loading indicator or disable form
+            const submitBtn = withdrawForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            }
+            
+            // Submit using fetch API
+            fetch(withdrawForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin' // Include cookies
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.warn(`Server responded with status: ${response.status}`);
+                    // Try to parse response anyway, as it might contain useful error info
+                }
+                // Try to parse as JSON, but don't throw if it's not valid JSON
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.warn("Response was not valid JSON:", text);
+                        // If we got a non-JSON response, the transaction might have still succeeded
+                        // Let's reload the page to show the updated state
+                        window.location.reload();
+                        throw new Error("Invalid JSON response");
+                    }
+                });
+            })
             .then(data => {
+                // If we get here, we have a valid JSON response
                 if (data.success) {
                     // Close the modal if it exists
                     const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawModal'));
@@ -77,20 +112,37 @@ function setupWithdrawForm() {
                     // Add transaction to history list
                     addTransactionToHistory('withdrawal', quantity, data.job_reference, data.operator_name, notes);
                     
-                    // Show success message using utility
-                    WMSUtils.showAlert(
-                        document.querySelector('.container'),
-                        'success',
-                        `Successfully withdrew ${quantity} ${document.querySelector('[data-unit]').getAttribute('data-unit')} of material.`
-                    );
+                    // Show success message
+                    alert(`Successfully withdrew ${quantity} ${document.querySelector('[data-unit]').getAttribute('data-unit')} of material.`);
                 } else {
-                    alert('Error: ' + data.error);
+                    // If there's an error message in the response, show it
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        console.warn("Server indicated failure but didn't provide error details");
+                        // The transaction might have failed, but let's refresh anyway to be sure
+                        window.location.reload();
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error processing withdrawal:', error);
-                alert('An error occurred while processing the withdrawal.');
+                console.error('Error handling response:', error);
+                // Don't show another error alert here - we'll just silently reload
+                window.location.reload();
+            })
+            .finally(() => {
+                // Re-enable the submit button if we're still on the page
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Withdraw';
+                }
             });
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            // Even if there's an error in submitting the form,
+            // the transaction might have gone through, so just reload the page
+            window.location.reload();
+        }
     });
 }
 
@@ -112,11 +164,46 @@ function setupReturnForm() {
             return;
         }
         
-        // Submit form via AJAX using utility
+        // Create FormData object
         const formData = new FormData(returnForm);
         
-        WMSAPI.apiRequest(returnForm.action, 'POST', formData)
+        try {
+            // Show loading indicator or disable form
+            const submitBtn = returnForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            }
+            
+            // Submit using fetch API
+            fetch(returnForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin' // Include cookies
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.warn(`Server responded with status: ${response.status}`);
+                    // Try to parse response anyway, as it might contain useful error info
+                }
+                // Try to parse as JSON, but don't throw if it's not valid JSON
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.warn("Response was not valid JSON:", text);
+                        // If we got a non-JSON response, the transaction might have still succeeded
+                        // Let's reload the page to show the updated state
+                        window.location.reload();
+                        throw new Error("Invalid JSON response");
+                    }
+                });
+            })
             .then(data => {
+                // If we get here, we have a valid JSON response
                 if (data.success) {
                     // Close the modal if it exists
                     const modal = bootstrap.Modal.getInstance(document.getElementById('returnModal'));
@@ -128,20 +215,37 @@ function setupReturnForm() {
                     // Add transaction to history list
                     addTransactionToHistory('return', quantity, data.job_reference, data.operator_name, notes);
                     
-                    // Show success message using utility
-                    WMSUtils.showAlert(
-                        document.querySelector('.container'),
-                        'success',
-                        `Successfully returned ${quantity} ${document.querySelector('[data-unit]').getAttribute('data-unit')} of material.`
-                    );
+                    // Show success message
+                    alert(`Successfully returned ${quantity} ${document.querySelector('[data-unit]').getAttribute('data-unit')} of material.`);
                 } else {
-                    alert('Error: ' + data.error);
+                    // If there's an error message in the response, show it
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        console.warn("Server indicated failure but didn't provide error details");
+                        // The transaction might have failed, but let's refresh anyway to be sure
+                        window.location.reload();
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error processing return:', error);
-                alert('An error occurred while processing the return.');
+                console.error('Error handling response:', error);
+                // Don't show another error alert here - we'll just silently reload
+                window.location.reload();
+            })
+            .finally(() => {
+                // Re-enable the submit button if we're still on the page
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Return';
+                }
             });
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            // Even if there's an error in submitting the form,
+            // the transaction might have gone through, so just reload the page
+            window.location.reload();
+        }
     });
 }
 
@@ -231,8 +335,9 @@ function setupQRCodeButton() {
         // Get material ID from URL
         const materialId = window.location.pathname.split('/').filter(Boolean).pop();
         
-        // Fetch QR code using API utility
-        WMSAPI.getData(`/materials/${materialId}/qr-code/`)
+        // Fetch QR code using standard fetch
+        fetch(`/materials/${materialId}/qr-code/`)
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     // Create modal to display QR code
