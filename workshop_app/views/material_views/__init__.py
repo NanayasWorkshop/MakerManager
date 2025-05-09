@@ -9,7 +9,7 @@ from workshop_app.views.material_views.list_views import material_list
 from workshop_app.views.material_views.detail_views import material_detail, material_history, get_material_qr_code
 from workshop_app.views.material_views.edit_views import add_material, edit_material, delete_material_attachment
 from workshop_app.views.material_views.transaction_views import withdraw_material, return_material, restock_material, restock_material_form
-from workshop_app.views.material_views.api_views import get_active_job, clear_active_job, start_timer
+from workshop_app.views.material_views.api_views import get_active_job, clear_active_job, start_timer, stop_timer  # Added stop_timer here
 
 # Re-export all views
 __all__ = [
@@ -27,4 +27,5 @@ __all__ = [
     'get_active_job',
     'clear_active_job',
     'start_timer',
+    'stop_timer',  # Added stop_timer here too
 ]

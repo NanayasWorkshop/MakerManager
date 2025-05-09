@@ -18,7 +18,8 @@ from workshop_app.views.material_views import (
     delete_material_attachment,
     get_active_job,
     clear_active_job,
-    start_timer
+    start_timer,
+    stop_timer  # Added stop_timer here
 )
 
 # Keep all the exported names in __all__
@@ -35,4 +36,5 @@ __all__ = [
     'get_active_job',
     'clear_active_job',
     'start_timer',
+    'stop_timer',  # Added stop_timer here too
 ]
