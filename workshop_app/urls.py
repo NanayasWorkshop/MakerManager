@@ -12,6 +12,13 @@ from workshop_app.views.machine_views import (
     start_machine_usage,
     stop_machine_usage
 )
+from workshop_app.views.job_views import (
+    job_list,
+    job_detail,
+    add_job,
+    edit_job,
+    get_client_contacts
+)
 
 urlpatterns = [
     # Authentication URLs
@@ -58,8 +65,15 @@ urlpatterns = [
     path('machines/<str:machine_id>/stop-usage/', stop_machine_usage, name='stop_machine_usage'),
     path('machines/<str:machine_id>/qr-code/', get_machine_qr_code, name='machine_qr_code'),
     
+    # Job URLs
+    path('jobs/', job_list, name='job_list'),
+    path('jobs/add/', add_job, name='add_job'),
+    path('jobs/<str:job_id>/', job_detail, name='job_detail'),
+    path('jobs/<str:job_id>/edit/', edit_job, name='edit_job'),
+    
     # API endpoints
     path('api/active-job/', material_views.get_active_job, name='api_active_job'),
     path('api/clear-active-job/', material_views.clear_active_job, name='clear_active_job'),
     path('api/start-timer/', material_views.start_timer, name='start_timer'),
+    path('api/clients/<int:client_id>/contacts/', get_client_contacts, name='client_contacts'),
 ]

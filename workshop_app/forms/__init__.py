@@ -6,3 +6,6 @@ from workshop_app.forms.base_forms import ManualEntryForm, LoginForm
 
 # Re-export machine forms
 from workshop_app.forms.machine_forms import MachineFilterForm, MachineForm, MachineUsageForm, MachineStopUsageForm
+
+# Re-export job forms
+from workshop_app.forms.job_forms import JobFilterForm, JobForm

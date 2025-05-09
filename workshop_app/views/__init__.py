@@ -9,3 +9,12 @@ from workshop_app.views.machine_views import (
     start_machine_usage,
     stop_machine_usage
 )
+
+# Import job views
+from workshop_app.views.job_views import (
+    job_list,
+    job_detail,
+    add_job,
+    edit_job,
+    get_client_contacts
+)

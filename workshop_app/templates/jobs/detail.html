@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ job.project_name }} - Workshop Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-3">
+        <a href="{% url 'job_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Jobs
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Job Details -->
+        <div class="col-md-8">
+            <div class="card mb-4 {% if job.is_overdue %}border-danger{% elif job.deadline %}border-warning{% else %}border-primary{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center 
+                    {% if job.is_overdue %}bg-danger text-white{% elif job.deadline %}bg-warning{% else %}bg-primary text-white{% endif %}">
+                    <h4 class="mb-0">Job: {{ job.job_id }}</h4>
+                    <span class="badge bg-light {% if job.is_overdue %}text-danger{% elif job.deadline %}text-warning{% else %}text-primary{% endif %}">
+                        {{ job.status.name }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-3">{{ job.project_name }}</h3>
+                    
+                    <!-- Progress bar -->
+                    <div class="progress mb-4" style="height: 20px;">
+                        <div class="progress-bar 
+                            {% if job.percent_complete < 25 %}bg-danger
+                            {% elif job.percent_complete < 75 %}bg-warning
+                            {% else %}bg-success{% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ job.percent_complete }}%;" 
+                            aria-valuenow="{{ job.percent_complete }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                            {{ job.percent_complete }}%
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Basic Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Client:</dt>
+                                <dd class="col-sm-8">{% if job.client %}{{ job.client.name }}{% else %}Not assigned{% endif %}</dd>
+                                
+                                <dt class="col-sm-4">Contact:</dt>
+                                <dd class="col-sm-8">{% if job.contact_person %}{{ job.contact_person.name }}{% else %}Not assigned{% endif %}</dd>
+                                
+                                <dt class="col-sm-4">Priority:</dt>
+                                <dd class="col-sm-8">
+                                    {% if job.priority == 'low' %}
+                                    <span class="badge bg-secondary">Low</span>
+                                    {% elif job.priority == 'medium' %}
+                                    <span class="badge bg-primary">Medium</span>
+                                    {% elif job.priority == 'high' %}
+                                    <span class="badge bg-warning text-dark">High</span>
+                                    {% elif job.priority == 'urgent' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Created By:</dt>
+                                <dd class="col-sm-8">{% if job.created_by %}{{ job.created_by.get_full_name|default:job.created_by.username }}{% else %}System{% endif %}</dd>
+                                
+                                <dt class="col-sm-4">Created Date:</dt>
+                                <dd class="col-sm-8">{{ job.created_date|date:"Y-m-d H:i" }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Schedule Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-5">Start Date:</dt>
+                                <dd class="col-sm-7">{% if job.start_date %}{{ job.start_date }}{% else %}Not set{% endif %}</dd>
+                                
+                                <dt class="col-sm-5">Expected Completion:</dt>
+                                <dd class="col-sm-7">{% if job.expected_completion %}{{ job.expected_completion }}{% else %}Not set{% endif %}</dd>
+                                
+                                <dt class="col-sm-5">Deadline:</dt>
+                                <dd class="col-sm-7">
+                                    {% if job.deadline %}
+                                    {{ job.deadline }}
+                                    {% if job.is_overdue %}
+                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                    {% elif job.days_until_deadline < 7 %}
+                                    <span class="badge bg-warning text-dark ms-1">Due soon</span>
+                                    {% endif %}
+                                    {% else %}
+                                    Not set
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-5">Days Remaining:</dt>
+                                <dd class="col-sm-7">
+                                    {% if job.days_until_deadline is not None %}
+                                    {% if job.is_overdue %}
+                                    <span class="text-danger">Overdue</span>
+                                    {% else %}
+                                    {{ job.days_until_deadline }} days
+                                    {% endif %}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-5">Job Type:</dt>
+                                <dd class="col-sm-7">
+                                    {% if job.is_general %}
+                                    <span class="badge bg-info">General</span>
+                                    {% endif %}
+                                    {% if job.is_personal %}
+                                    <span class="badge bg-success">Personal</span>
+                                    {% endif %}
+                                    {% if not job.is_general and not job.is_personal %}
+                                    <span class="badge bg-secondary">Standard</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    {% if job.description %}
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                {{ job.description|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Materials Used Section -->
+                    <div class="mb-4">
+                        <h5>Materials Used</h5>
+                        {% if materials %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Material</th>
+                                        <th>Quantity</th>
+                                        <th>Date Used</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for material in materials %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'material_detail' material.material.material_id %}">
+                                                {{ material.material.name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ material.quantity }} {{ material.material.unit_of_measurement }}</td>
+                                        <td>{{ material.date_used|date:"Y-m-d" }}</td>
+                                        <td>
+                                            {% if material.result == 'active' %}
+                                            <span class="badge bg-primary">Active</span>
+                                            {% elif material.result == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                            {% elif material.result == 'returned' %}
+                                            <span class="badge bg-info">Returned</span>
+                                            {% elif material.result == 'scrapped' %}
+                                            <span class="badge bg-danger">Scrapped</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No materials used for this job yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <form method="post" action="{% url 'activate_job_by_id' %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="job_id" value="{{ job.job_id }}">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Set as Active Job
+                                </button>
+                            </form>
+                        </div>
+                        <div>
+                            <a href="{% url 'edit_job' job.job_id %}" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Job Sidebar -->
+        <div class="col-md-4">
+            <!-- Current Machines -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Current Machines</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if current_machines %}
+                    <div class="list-group list-group-flush">
+                        {% for machine in current_machines %}
+                        <a href="{% url 'machine_detail' machine.machine_id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ machine.name }}</h6>
+                                <small class="text-muted">{{ machine.machine_id }}</small>
+                            </div>
+                            <p class="mb-1">
+                                <small>{{ machine.machine_type.name }}</small>
+                            </p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">No machines currently in use for this job</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Job Actions -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Job Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'scan' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-upc-scan"></i> Scan Materials
+                        </a>
+                        {% if is_active_job %}
+                        <button class="btn btn-outline-success" onclick="startTimer()">
+                            <i class="bi bi-play-circle"></i> Start Timer
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function startTimer() {
+        // Call the API to start timer
+        fetch('/api/start-timer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error starting timer:', error);
+            alert('An error occurred while starting the timer.');
+        });
+    }
+</script>
+{% endblock %}

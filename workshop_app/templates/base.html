@@ -42,6 +42,15 @@
                             </a>
                         </li>
                         <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="jobsDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-briefcase"></i> Jobs
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'job_list' %}">List Jobs</a>
+                                <a class="dropdown-item" href="{% url 'add_job' %}">Add New Job</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="materialsDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-box"></i> Materials
                             </a>
