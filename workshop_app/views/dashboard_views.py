@@ -59,10 +59,10 @@ def dashboard(request):
         # Reload the page to get the new settings with personal job
         return redirect('dashboard')
         
-    # Get recent jobs for the user
+    # Get recent jobs for the user - exclude jobs with empty job_id
     recent_jobs = Job.objects.filter(
         Q(created_by=request.user) | Q(owner=request.user)
-    ).order_by('-created_date')[:5]
+    ).exclude(job_id='').order_by('-created_date')[:5]
     
     # Get available machines the user is certified for
     available_machines = []
