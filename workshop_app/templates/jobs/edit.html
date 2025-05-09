@@ -117,17 +117,15 @@
                         <!-- Project Type -->
                         <div class="form-section">
                             <h5 class="form-section-title">Project Type</h5>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="is_general" name="is_general" {% if job.is_general %}checked{% endif %}>
-                                <label class="form-check-label" for="is_general">
-                                    General Project (not tied to a specific client)
-                                </label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="is_personal" name="is_personal" {% if job.is_personal %}checked{% endif %}>
-                                <label class="form-check-label" for="is_personal">
-                                    Personal Project (automatically set as your personal job)
-                                </label>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="project_type" class="form-label">Project Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="project_type" name="project_type" required>
+                                        <option value="JOB" {% if job.project_type == 'JOB' %}selected{% endif %}>Standard Job</option>
+                                        <option value="GEN" {% if job.project_type == 'GEN' %}selected{% endif %}>General Project (not tied to a specific client)</option>
+                                        <option value="PER" {% if job.project_type == 'PER' %}selected{% endif %}>Personal Project (set as your personal job)</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         
