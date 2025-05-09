@@ -158,9 +158,16 @@ def stop_timer(request):
                 'error': 'No active time tracking found'
             })
         
-        # Stop time tracking
+        # Get notes from the form
         notes = request.POST.get('notes', '')
-        active_tracking = JobTimeTracking.stop_tracking(request.user, notes)
+        
+        # Stop time tracking with improved notes
+        if notes:
+            # Store the work notes instead of generic messages
+            active_tracking = JobTimeTracking.stop_tracking(request.user, notes)
+        else:
+            # If no notes provided, use a generic message
+            active_tracking = JobTimeTracking.stop_tracking(request.user, "Stopped from dashboard")
         
         # Calculate duration
         duration = active_tracking.duration
@@ -175,6 +182,54 @@ def stop_timer(request):
             'end_time': active_tracking.end_time.isoformat(),
             'duration': active_tracking.elapsed_time,
             'hours_worked': round(hours, 2)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@login_required
+@require_POST
+def edit_time_tracking_notes(request, tracking_id):
+    """API endpoint to edit notes for a completed time tracking entry"""
+    try:
+        # Get the time tracking entry
+        time_entry = JobTimeTracking.objects.get(id=tracking_id, user=request.user)
+        
+        # Check if this entry belongs to the current user
+        if time_entry.user != request.user:
+            return JsonResponse({
+                'success': False,
+                'error': 'You do not have permission to edit this time entry'
+            })
+            
+        # Check if the entry is completed (has end time)
+        if not time_entry.end_time:
+            return JsonResponse({
+                'success': False,
+                'error': 'Cannot edit notes for active time tracking entries'
+            })
+        
+        # Update the notes
+        new_notes = request.POST.get('notes', '')
+        time_entry.notes = new_notes
+        time_entry.save()
+        
+        # Format notes for display with line breaks
+        formatted_notes = new_notes.replace('\n', '<br>') if new_notes else '-'
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Time tracking notes updated successfully',
+            'tracking_id': time_entry.id,
+            'updated_notes': formatted_notes
+        })
+    except JobTimeTracking.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Time tracking entry not found'
         })
     except Exception as e:
         return JsonResponse({

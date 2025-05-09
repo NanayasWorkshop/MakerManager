@@ -5,16 +5,6 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize time tracking buttons
-    initTimeTrackingButtons();
-    
-    // If there's an active timer, update it periodically
-    if (document.getElementById('stopTimerBtn')) {
-        startElapsedTimeCounter();
-    }
-});
-
-// Initialize time tracking buttons
-function initTimeTrackingButtons() {
     const startTimerBtn = document.getElementById('startTimerBtn');
     const stopTimerBtn = document.getElementById('stopTimerBtn');
     
@@ -23,9 +13,57 @@ function initTimeTrackingButtons() {
     }
     
     if (stopTimerBtn) {
-        stopTimerBtn.addEventListener('click', stopTimer);
+        stopTimerBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            showStopTimerModal();
+        });
     }
-}
+    
+    // If there's an active timer, update it periodically
+    if (stopTimerBtn) {
+        startElapsedTimeCounter();
+    }
+    
+    // Create modal if it doesn't exist
+    if (!document.getElementById('stopTimerModal')) {
+        // Create the modal HTML
+        const modalHTML = `
+        <div class="modal fade" id="stopTimerModal" tabindex="-1" aria-labelledby="stopTimerModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="stopTimerModalLabel">Stop Time Tracking</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="stopTimerForm">
+                            <div class="mb-3">
+                                <label for="stopTimerNotes" class="form-label">What did you work on? (optional)</label>
+                                <textarea class="form-control" id="stopTimerNotes" rows="3" placeholder="Describe what you worked on during this time period"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmStopTimer">Stop Timer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        
+        // Add the modal to the document body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Set up the button handler
+        document.getElementById('confirmStopTimer').addEventListener('click', function() {
+            const notes = document.getElementById('stopTimerNotes').value;
+            submitStopTimer(notes);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('stopTimerModal'));
+            modal.hide();
+        });
+    }
+});
 
 // Start timer for active job
 function startTimer() {
@@ -56,7 +94,10 @@ function startTimer() {
                 newButton.id = 'stopTimerBtn';
                 newButton.dataset.jobId = data.job_name;
                 newButton.innerHTML = `<i class="bi bi-stop-circle"></i> Stop Time (0m 0s)`;
-                newButton.addEventListener('click', stopTimer);
+                newButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    showStopTimerModal();
+                });
                 
                 btnGroup.prepend(newButton);
                 
@@ -77,8 +118,17 @@ function startTimer() {
     });
 }
 
-// Stop timer for active job
-function stopTimer() {
+// Show modal to enter notes when stopping the timer
+function showStopTimerModal() {
+    console.log("Showing stop timer modal");
+    const stopTimerModal = document.getElementById('stopTimerModal');
+    const modal = new bootstrap.Modal(stopTimerModal);
+    modal.show();
+}
+
+// Submit the stop timer request with notes
+function submitStopTimer(notes) {
+    console.log("Submitting stop timer with notes:", notes);
     // Get CSRF token
     const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
     
@@ -89,7 +139,7 @@ function stopTimer() {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': csrfToken
         },
-        body: 'notes=Stopped from dashboard'
+        body: `notes=${encodeURIComponent(notes)}`
     })
     .then(response => response.json())
     .then(data => {

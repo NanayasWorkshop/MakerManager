@@ -89,7 +89,8 @@ class JobTimeTracking(models.Model):
         if active_tracking:
             active_tracking.end_time = timezone.now()
             if notes:
-                active_tracking.notes += f"\n\nEnd notes: {notes}"
+                # Set the notes directly instead of appending to previous notes
+                active_tracking.notes = notes
             active_tracking.save()
             return active_tracking
         return None

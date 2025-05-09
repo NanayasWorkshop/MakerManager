@@ -20,6 +20,7 @@ from workshop_app.views.job_views import (
     get_client_contacts,
     get_job_qr_code
 )
+from workshop_app.views.material_views.api_views import edit_time_tracking_notes
 
 urlpatterns = [
     # Authentication URLs
@@ -77,6 +78,7 @@ urlpatterns = [
     path('api/active-job/', material_views.get_active_job, name='api_active_job'),
     path('api/clear-active-job/', material_views.clear_active_job, name='clear_active_job'),
     path('api/start-timer/', material_views.start_timer, name='start_timer'),
-    path('api/stop-timer/', material_views.stop_timer, name='stop_timer'),  # Added stop timer endpoint
+    path('api/stop-timer/', material_views.stop_timer, name='stop_timer'),
+    path('api/time-tracking/<int:tracking_id>/edit-notes/', edit_time_tracking_notes, name='edit_time_tracking_notes'),
     path('api/clients/<int:client_id>/contacts/', get_client_contacts, name='client_contacts'),
 ]

@@ -80,7 +80,7 @@
                 <tr>
                     <td>
                         <div class="fw-bold">{{ job.project_name }}</div>
-                        <small class="text-muted">{{ job.job_id }}</small>
+                        <small class="text-muted">{{ job.job_id|default:"No ID" }}</small>
                     </td>
                     <td>
                         {% if job.client %}
@@ -132,6 +132,7 @@
                     </td>
                     <td>
                         <div class="btn-group">
+                            {% if job.job_id %}
                             <a href="{% url 'job_detail' job.job_id %}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i>
                             </a>
@@ -142,6 +143,9 @@
                                     onclick="setActiveJob('{{ job.job_id }}')">
                                 <i class="bi bi-check-circle"></i>
                             </button>
+                            {% else %}
+                            <span class="text-muted">No ID</span>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
